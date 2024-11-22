@@ -37,7 +37,8 @@ const createProduct = async (req: Request, res: Response) => {
 // get all bike
 const getAllProduct = async (req: Request, res: Response) => {
   try {
-    const result = await ProductServices.getAllProductDB();
+    const { searchTerm } = req.query;
+    const result = await ProductServices.getAllProductDB(searchTerm as string);
     res.status(200).json({
       success: true,
       message: 'Bikes retrieved successfully',

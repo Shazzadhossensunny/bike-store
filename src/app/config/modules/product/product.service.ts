@@ -6,8 +6,24 @@ const createProductIntoDB = async (productData: TProduct) => {
   return result;
 };
 
-const getAllProductDB = async () => {
-  const result = await Product.find();
+const getAllProductDB = async (searchTerm?: string) => {
+  let query = {};
+
+  if (searchTerm) {
+    query = {
+      $or: [
+        { name: { $regex: searchTerm, $options: 'i' } },
+        { brand: { $regex: searchTerm, $options: 'i' } },
+        { category: { $regex: searchTerm, $options: 'i' } },
+      ],
+    };
+  }
+
+  const result = await Product.find(query);
+  // Check if result is empty
+  if (result.length === 0) {
+    throw new Error('No products found matching the search criteria.');
+  }
   return result;
 };
 
