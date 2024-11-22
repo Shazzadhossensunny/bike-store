@@ -33,6 +33,14 @@ const getSingleProductDB = async (productId: string) => {
 };
 
 const updateProductDB = async (productId: string, data: Partial<TProduct>) => {
+  const existingProduct = await Product.findById(productId);
+  if (!existingProduct) {
+    throw new Error('Product not found');
+  }
+  // If quantity is being updated, modify inStock status
+  if (data.quantity !== undefined) {
+    data.inStock = data.quantity > 0;
+  }
   const result = await Product.findByIdAndUpdate(productId, data, {
     new: true,
   });
