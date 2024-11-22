@@ -1,9 +1,8 @@
 import { TProduct } from './product.interface';
-import { ProductModel } from './product.model';
+import { Product } from './product.model';
 
 const createProductIntoDB = async (productData: TProduct) => {
-  console.log(productData);
-  const result = await ProductModel.create(productData);
+  const result = await Product.create(productData);
   return result;
 };
 

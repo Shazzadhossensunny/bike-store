@@ -6,6 +6,17 @@ const createProduct = async (req: Request, res: Response) => {
   try {
     const productData = req.body;
     const zodParseValidation = productValidationSchema.parse(productData);
+    // same name product find and if same name product find then it return
+    // const existingProduct = await Product.findOne({
+    //   name: zodParseValidation.name,
+    // });
+    // if (existingProduct) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: 'Product name already exists. Please use a different name.',
+    //   });
+    // }
+    //new product create
     const result =
       await ProductServices.createProductIntoDB(zodParseValidation);
     res.status(200).json({
@@ -13,11 +24,12 @@ const createProduct = async (req: Request, res: Response) => {
       message: 'Bike created successfully!',
       data: result,
     });
-  } catch (err: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
     res.status(500).json({
+      message: 'Validation failed',
       success: false,
-      message: err.message || 'Something went wrong!',
-      error: err,
+      error,
     });
   }
 };
