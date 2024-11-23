@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
 import { OrderService } from './order.service';
 import zodOrderValidationSchema from './order.validation';
@@ -14,7 +15,6 @@ const createOrder = async (req: Request, res: Response) => {
       message: 'Order created successfully!',
       data: result,
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     res.status(400).json({
       success: false,
