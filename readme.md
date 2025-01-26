@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Bike Store API is an Express.js application developed with TypeScript, integrating MongoDB using Mongoose. It manages products (bikes) and orders, ensuring data integrity with schema validation, and features robust error handling.
+The Bike Store is an Express.js application developed with TypeScript, integrating MongoDB using Mongoose. It manages products (bikes) and orders, ensuring data integrity with schema validation, and features robust error handling.
 
 ## Features
 
