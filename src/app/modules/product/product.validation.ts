@@ -1,22 +1,35 @@
 import { z } from 'zod';
 
-const productValidationSchema = z.object({
-  name: z.string().min(3, 'Name must be at least 3 characters long'),
-  brand: z.string().min(2, 'Brand name must be at least 2 characters long'),
-  price: z.number().min(0, 'Price must be a positive number'),
-  category: z.enum(['Mountain', 'Road', 'Hybrid', 'Electric'], {
-    errorMap: () => ({
-      message: 'Category must be one of Mountain, Road, Hybrid, or Electric',
-    }),
+export const productValidationSchema = z.object({
+  body: z.object({
+    name: z.string().min(1, 'Product name is required'),
+    brand: z.string().min(1, 'Brand is required'),
+    price: z.number().positive('Price must be greater than 0'),
+    model: z.string().min(1, 'Model is required'),
+    stock: z.number().int().nonnegative('Stock must be a non-negative integer'),
+    category: z.string().min(1, 'Category is required'),
+    description: z.string().min(1, 'Description is required'),
+    image: z.string().url('Invalid image URL'),
   }),
-  description: z
-    .string()
-    .min(10, 'Description must be at least 10 characters long'),
-  quantity: z
-    .number()
-    .int('Quantity must be an integer')
-    .min(0, 'Quantity cannot be negative'),
-  inStock: z.boolean().default(true),
+});
+export const updateProductValidationSchema = z.object({
+  body: z.object({
+    name: z.string().min(1, 'Product name is required').optional(),
+    brand: z.string().min(1, 'Brand is required').optional(),
+    price: z.number().positive('Price must be greater than 0').optional(),
+    model: z.string().min(1, 'Model is required').optional(),
+    stock: z
+      .number()
+      .int()
+      .nonnegative('Stock must be a non-negative integer')
+      .optional(),
+    category: z.string().min(1, 'Category is required').optional(),
+    description: z.string().min(1, 'Description is required').optional(),
+    image: z.string().url('Invalid image URL').optional(),
+  }),
 });
 
-export default productValidationSchema;
+export const ProductValidation = {
+  productValidationSchema,
+  updateProductValidationSchema,
+};

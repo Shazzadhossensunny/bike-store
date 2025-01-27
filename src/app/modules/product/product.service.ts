@@ -1,54 +1,69 @@
+import { StatusCodes } from 'http-status-codes';
+import QueryBuilder from '../../builder/QueryBuilder';
+import AppError from '../../errors/AppError';
+import { ProductSearchableFields } from './product.constant';
 import { TProduct } from './product.interface';
 import { Product } from './product.model';
 
 const createProductIntoDB = async (productData: TProduct) => {
+  productData.inStock = productData.stock > 0;
   const result = await Product.create(productData);
   return result;
 };
 
-const getAllProductDB = async (searchTerm?: string) => {
-  let query = {};
+const getAllProductDB = async (query: Record<string, unknown>) => {
+  const productQuery = new QueryBuilder(Product.find(), query)
+    .search(ProductSearchableFields)
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
 
-  if (searchTerm) {
-    query = {
-      $or: [
-        { name: { $regex: searchTerm, $options: 'i' } },
-        { brand: { $regex: searchTerm, $options: 'i' } },
-        { category: { $regex: searchTerm, $options: 'i' } },
-      ],
-    };
-  }
+  const meta = await productQuery.countTotal();
+  const result = await productQuery.modelQuery;
+  return {
+    meta,
+    result,
+  };
+};
 
-  const result = await Product.find(query);
-  // Check if result is empty
-  if (result.length === 0) {
-    throw new Error('No products found matching the search criteria.');
+const getSingleProductDB = async (id: string) => {
+  const result = await Product.findById(id);
+  if (!result) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'Product not found');
   }
   return result;
 };
 
-const getSingleProductDB = async (productId: string) => {
-  const result = await Product.findById(productId);
-  return result;
-};
-
-const updateProductDB = async (productId: string, data: Partial<TProduct>) => {
-  const existingProduct = await Product.findById(productId);
-  if (!existingProduct) {
-    throw new Error('Product not found');
+const updateProductDB = async (id: string, payload: Partial<TProduct>) => {
+  const product = await Product.findById(id);
+  if (!product) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'Product not found');
   }
-  // If quantity is being updated, modify inStock status
-  if (data.quantity !== undefined) {
-    data.inStock = data.quantity > 0;
+  // Handle stock update separately
+  if (payload.stock !== undefined) {
+    const newStock = product.stock + payload.stock;
+    if (newStock < 0) {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        'Stock cannot be reduced below 0',
+      );
+    }
+    payload.stock = newStock;
+    payload.inStock = newStock > 0;
   }
-  const result = await Product.findByIdAndUpdate(productId, data, {
+  const result = await Product.findByIdAndUpdate(id, payload, {
     new: true,
+    runValidators: true,
   });
   return result;
 };
 
-const deleteProductDB = async (productId: string) => {
-  const result = await Product.findByIdAndDelete(productId);
+const deleteProductDB = async (id: string) => {
+  const result = await Product.findByIdAndDelete(id);
+  if (!result) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'Product not found');
+  }
   return result;
 };
 

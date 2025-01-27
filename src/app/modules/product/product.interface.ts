@@ -2,8 +2,10 @@ export type TProduct = {
   name: string;
   brand: string;
   price: number;
-  category: 'Mountain' | 'Road' | 'Hybrid' | 'Electric';
+  model: string;
+  stock: number;
+  category: string;
   description: string;
-  quantity: number;
-  inStock: boolean;
+  image: string;
+  inStock?: boolean;
 };

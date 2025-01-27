@@ -5,11 +5,7 @@ import { USER_ROLE } from './user.constant';
 
 const router = express.Router();
 
-router.post(
-  '/',
-  auth(USER_ROLE.admin, USER_ROLE.customer),
-  UserControllers.registerUser,
-);
+router.post('/', UserControllers.registerUser);
 router.get(
   '/:id',
   auth(USER_ROLE.admin, USER_ROLE.customer),

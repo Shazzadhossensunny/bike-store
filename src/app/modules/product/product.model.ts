@@ -1,18 +1,16 @@
 import { model, Schema } from 'mongoose';
 import { TProduct } from './product.interface';
+import { boolean } from 'zod';
 
 const productSchema = new Schema<TProduct>(
   {
     name: {
       type: String,
-      unique: true,
       required: [true, 'Name is required'],
-      minlength: [3, 'Name must be at least 3 characters long'],
     },
     brand: {
       type: String,
       required: [true, 'Brand is required'],
-      minlength: [2, 'Brand name must be at least 2 characters long'],
     },
     price: {
       type: Number,
@@ -21,11 +19,6 @@ const productSchema = new Schema<TProduct>(
     },
     category: {
       type: String,
-      enum: {
-        values: ['Mountain', 'Road', 'Hybrid', 'Electric'],
-        message:
-          '{VALUE} is not in Category.Category must be one of Mountain, Road, Hybrid, or Electric',
-      },
       required: [true, 'Category is required'],
     },
     description: {
@@ -33,19 +26,17 @@ const productSchema = new Schema<TProduct>(
       required: [true, 'Description is required'],
       minlength: [10, 'Description must be at least 10 characters long'],
     },
-    quantity: {
-      type: Number,
-      required: [true, 'Quantity is required'],
-      min: [0, 'Quantity cannot be negative'],
-      validate: {
-        validator: Number.isInteger,
-        message: 'Quantity must be an integer',
-      },
+    model: {
+      type: String,
+      required: [true, 'Model is required'],
     },
-    inStock: {
-      type: Boolean,
-      required: [true, 'In-stock status is required'],
-      default: true,
+    stock: {
+      type: Number,
+      required: [true, 'Stock is required'],
+    },
+    image: {
+      type: String,
+      required: [true, 'Image is required'],
     },
   },
   {

@@ -1,120 +1,67 @@
 import { Request, Response } from 'express';
+import catchAsync from '../../utils/catchAsync';
+import sendResponse from '../../utils/sendResponse';
+import { StatusCodes } from 'http-status-codes';
 import { ProductServices } from './product.service';
-import productValidationSchema from './product.validation';
 // create a bike
-const createProduct = async (req: Request, res: Response) => {
-  try {
-    const productData = req.body;
-    const zodParseValidation = productValidationSchema.parse(productData);
-    // same name product find and if same name product find then it return
-    // const existingProduct = await Product.findOne({
-    //   name: zodParseValidation.name,
-    // });
-    // if (existingProduct) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: 'Product name already exists. Please use a different name.',
-    //   });
-    // }
-    //new product create
-    const result =
-      await ProductServices.createProductIntoDB(zodParseValidation);
-    res.status(200).json({
-      success: true,
-      message: 'Bike created successfully!',
-      data: result,
-    });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    res.status(500).json({
-      message: 'Validation failed',
-      success: false,
-      error,
-    });
-  }
-};
-
+const createProduct = catchAsync(async (req, res) => {
+  const result = await ProductServices.createProductIntoDB(req.body);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Product create successfully',
+    data: result,
+  });
+});
 // get all bike
-const getAllProduct = async (req: Request, res: Response) => {
-  try {
-    const { searchTerm } = req.query;
-    const result = await ProductServices.getAllProductDB(searchTerm as string);
-    res.status(200).json({
-      success: true,
-      message: 'Bikes retrieved successfully',
-      data: result,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Validation failed',
-      success: false,
-      error,
-    });
-  }
-};
+const getAllProduct = catchAsync(async (req, res) => {
+  const result = await ProductServices.getAllProductDB(req.query);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Products retrieved successfully',
+    meta: result.meta,
+    data: result.result,
+  });
+});
 
 // get single bike by id
-const getSingleProduct = async (req: Request, res: Response) => {
-  try {
-    const id = req.params.productId;
-    const result = await ProductServices.getSingleProductDB(id);
-    res.status(200).json({
-      success: true,
-      message: 'Bike retrieved successfully',
-      data: result,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Validation failed',
-      success: false,
-      error,
-    });
-  }
-};
+const getSingleProduct = catchAsync(async (req, res) => {
+  const result = await ProductServices.getSingleProductDB(req.params.id);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Product retrieved successfully',
+    data: result,
+  });
+});
 
 //update single bike by id
-const updateSingleProduct = async (req: Request, res: Response) => {
-  try {
-    const id = req.params.productId;
-    const data = req.body;
-    const result = await ProductServices.updateProductDB(id, data);
-    res.status(200).json({
-      success: true,
-      message: 'Bike updated successfully',
-      data: result,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Validation failed',
-      success: false,
-      error,
-    });
-  }
-};
+const updateSingleProduct = catchAsync(async (req, res) => {
+  const result = await ProductServices.updateProductDB(req.params.id, req.body);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Product updated successfully',
+    data: result,
+  });
+});
 
-//delete single bike by id
-const deleteSingleProduct = async (req: Request, res: Response) => {
-  try {
-    const id = req.params.productId;
-    await ProductServices.deleteProductDB(id);
-    res.status(200).json({
-      success: true,
-      message: 'Bike deleted successfully',
-      result: {},
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Validation failed',
-      success: false,
-      error,
-    });
-  }
-};
+const deleteProduct = catchAsync(async (req: Request, res: Response) => {
+  const result = await ProductServices.deleteProductDB(req.params.id);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Product deleted successfully',
+    data: result,
+  });
+});
 
 export const ProductController = {
   createProduct,
   getAllProduct,
   getSingleProduct,
   updateSingleProduct,
-  deleteSingleProduct,
+  deleteProduct,
 };
