@@ -1,4 +1,4 @@
-import { Product } from '../product/product.model';
+import { Product } from '../Product/product.model';
 import { TOrder } from './order.interface';
 import { Order } from './order.model';
 
