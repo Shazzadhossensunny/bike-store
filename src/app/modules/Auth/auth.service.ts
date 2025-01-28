@@ -1,29 +1,39 @@
+// auth.service.ts
 import { StatusCodes } from 'http-status-codes';
 import AppError from '../../errors/AppError';
-import { User } from '../User/user.model';
 import { TLoginUser } from './auth.interface';
 import { createToken, verifyToken } from './auth.utils';
 import config from '../../config';
+import { User } from '../User/user.model';
 
 const loginUser = async (payload: TLoginUser) => {
-  const user = await User.isUserExistsByCustomEmail(payload.email);
+  const user = await User.isUserExistsByEmail(payload.email);
+
   if (!user) {
-    throw new AppError(StatusCodes.NOT_FOUND, 'This user is not found!');
+    throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
   }
 
-  if (!(await User.isPasswordMatched(payload?.password, user?.password)))
-    throw new AppError(StatusCodes.FORBIDDEN, 'Password do not matched');
+  const isPasswordMatched = await User.isPasswordMatched(
+    payload.password,
+    user.password,
+  );
 
-  // create token and sent to the client
+  if (!isPasswordMatched) {
+    throw new AppError(StatusCodes.UNAUTHORIZED, 'Invalid credentials');
+  }
+
   const jwtPayload = {
-    userEmail: user.email,
     role: user.role,
+    email: user.email,
+    userId: user._id,
   };
+
   const accessToken = createToken(
     jwtPayload,
     config.jwt_access_secret as string,
     config.jwt_access_expires_in as string,
   );
+
   const refreshToken = createToken(
     jwtPayload,
     config.jwt_refresh_secret as string,
@@ -40,17 +50,25 @@ const refreshToken = async (token: string) => {
   // checking if the given token is valid
   const decoded = verifyToken(token, config.jwt_refresh_secret as string);
 
-  const { userEmail, iat } = decoded;
+  const { email, userId, iat } = decoded;
 
   // checking if the user is exist
-  const user = await User.isUserExistsByCustomEmail(userEmail);
+  const user = await User.isUserExistsByEmail(email);
 
   if (!user) {
     throw new AppError(StatusCodes.NOT_FOUND, 'This user is not found !');
   }
 
+  // if (
+  //   user.passwordChangedAt &&
+  //   User.isJWTIssuedBeforePasswordChanged(user.passwordChangedAt, iat as number)
+  // ) {
+  //   throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized !');
+  // }
+
   const jwtPayload = {
-    userEmail: user.email,
+    userId: user._id,
+    email: user.email,
     role: user.role,
   };
 

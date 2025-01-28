@@ -7,20 +7,21 @@ const userSchema = new Schema<TUser, UserModel>(
   {
     name: {
       type: String,
-      required: true,
+      required: [true, 'Name is required'],
     },
     email: {
       type: String,
-      required: true,
+      required: [true, 'Email is required'],
       unique: true,
     },
     password: {
       type: String,
-      required: true,
+      required: [true, 'Password is required'],
+      select: false,
     },
     role: {
       type: String,
-      enum: ['admin', 'customer'],
+      enum: ['customer', 'admin'],
       default: 'customer',
     },
   },
@@ -31,7 +32,7 @@ const userSchema = new Schema<TUser, UserModel>(
 
 userSchema.pre('save', async function (next) {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const user = this; // doc
+  const user = this;
   // hashing password and save into DB
   user.password = await bcrypt.hash(
     user.password,
@@ -46,7 +47,8 @@ userSchema.post('save', function (doc, next) {
   next();
 });
 
-userSchema.statics.isUserExistsByCustomEmail = async function (email: string) {
+// Static methods
+userSchema.statics.isUserExistsByEmail = async function (email: string) {
   return await User.findOne({ email }).select('+password');
 };
 
@@ -56,5 +58,14 @@ userSchema.statics.isPasswordMatched = async function (
 ) {
   return await bcrypt.compare(plainTextPassword, hashedPassword);
 };
+
+// userSchema.statics.isJWTIssuedBeforePasswordChanged = function (
+//   passwordChangedTimestamp: Date,
+//   jwtIssuedTimestamp: number,
+// ) {
+//   const passwordChangedTime =
+//     new Date(passwordChangedTimestamp).getTime() / 1000;
+//   return passwordChangedTime > jwtIssuedTimestamp;
+// };
 
 export const User = model<TUser, UserModel>('User', userSchema);

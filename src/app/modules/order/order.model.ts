@@ -3,24 +3,44 @@ import { TOrder } from './order.interface';
 
 const orderSchema = new Schema<TOrder>(
   {
-    email: {
-      type: String,
-      required: [true, 'Customer email is required'],
-      match: [/\S+@\S+\.\S+/, 'Invalid email format'],
-    },
-    product: {
+    user: {
       type: Schema.Types.ObjectId,
-      ref: 'Product',
-      required: [true, 'Product ID is required'],
+      ref: 'User',
+      required: true,
     },
-    quantity: {
+    products: [
+      {
+        product: {
+          type: Schema.Types.ObjectId,
+          ref: 'Product',
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        price: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
+    totalAmount: {
       type: Number,
-      required: [true, 'Quantity is required'],
-      min: [1, 'Quantity must be at least 1'],
+      required: true,
     },
-    totalPrice: {
-      type: Number,
-      required: [true, 'Total price is required'],
+    status: {
+      type: String,
+      enum: ['pending', 'processing', 'shipped', 'delivered'],
+      default: 'pending',
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['pending', 'completed'],
+      default: 'pending',
+    },
+    estimatedDeliveryDate: {
+      type: Date,
     },
   },
   {

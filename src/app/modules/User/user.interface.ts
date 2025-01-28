@@ -2,16 +2,21 @@ import { Model } from 'mongoose';
 import { USER_ROLE } from './user.constant';
 
 export interface TUser {
+  _id: string;
   name: string;
   email: string;
   password: string;
   role: 'customer' | 'admin';
+  passwordChangedAt?: Date;
 }
 
+export type TChangePassword = {
+  oldPassword: string;
+  newPassword: string;
+};
+
 export interface UserModel extends Model<TUser> {
-  //checking if the user exist
-  isUserExistsByCustomEmail(email: string): Promise<TUser>;
-  //instance methods for checking if passwords are matched
+  isUserExistsByEmail(email: string): Promise<TUser>;
   isPasswordMatched(
     plainTextPassword: string,
     hashedPassword: string,

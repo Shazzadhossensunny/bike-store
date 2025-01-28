@@ -23,15 +23,26 @@ const getUserById = catchAsync(async (req, res) => {
   });
 });
 
-const updateUserById = catchAsync(async (req, res) => {
-  const updateUser = await UserServices.updateUser(req.params.id, req.body);
+const changePassword = catchAsync(async (req, res) => {
+  const { ...passwordData } = req.body;
+  const result = await UserServices.changePassword(req.user, passwordData);
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: 'User update successfully',
-    data: updateUser,
+    message: 'Password is updated successfully!',
+    data: result,
   });
 });
+
+// const updateUserById = catchAsync(async (req, res) => {
+//   const updateUser = await UserServices.updateUser(req.params.id, req.body);
+//   sendResponse(res, {
+//     statusCode: StatusCodes.OK,
+//     success: true,
+//     message: 'User update successfully',
+//     data: updateUser,
+//   });
+// });
 const deleteUserById = catchAsync(async (req, res) => {
   const deleteUser = await UserServices.deleteUser(req.params.id);
   sendResponse(res, {
@@ -45,6 +56,7 @@ const deleteUserById = catchAsync(async (req, res) => {
 export const UserControllers = {
   registerUser,
   getUserById,
-  updateUserById,
+  changePassword,
+  // updateUserById,
   deleteUserById,
 };

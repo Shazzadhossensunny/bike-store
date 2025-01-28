@@ -6,13 +6,15 @@ const userValidationSchema = z.object({
   role: z.enum(['customer', 'admin']).optional(),
 });
 
-const userUpdateSchema = z.object({
-  name: z.string().optional(),
-  email: z.string().email('Invalid email').optional(),
-  role: z.enum(['customer', 'admin']).optional(),
+const changePasswordValidation = z.object({
+  body: z.object({
+    oldPassword: z.string().min(6, 'Old password is required'),
+    newPassword: z
+      .string()
+      .min(6, 'New password must be at least 6 characters'),
+  }),
 });
-
 export const UserValidation = {
   userValidationSchema,
-  userUpdateSchema,
+  changePasswordValidation,
 };
