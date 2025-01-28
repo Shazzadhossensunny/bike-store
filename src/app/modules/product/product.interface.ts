@@ -1,11 +1,14 @@
+import { Types } from 'mongoose';
+
 export type TProduct = {
+  _id: string;
   name: string;
   brand: string;
-  price: number;
   model: string;
+  price: number;
   stock: number;
   category: string;
-  description: string;
   image: string;
-  inStock?: boolean;
+  description: string;
+  createdBy: Types.ObjectId;
 };

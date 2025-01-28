@@ -4,14 +4,14 @@ import AppError from '../../errors/AppError';
 import { ProductSearchableFields } from './product.constant';
 import { TProduct } from './product.interface';
 import { Product } from './product.model';
+import { SortOrder } from 'mongoose';
 
 const createProductIntoDB = async (productData: TProduct) => {
-  productData.inStock = productData.stock > 0;
   const result = await Product.create(productData);
   return result;
 };
 
-const getAllProductDB = async (query: Record<string, unknown>) => {
+const getAllProductsDB = async (query: Record<string, unknown>) => {
   const productQuery = new QueryBuilder(Product.find(), query)
     .search(ProductSearchableFields)
     .filter()
@@ -26,6 +26,52 @@ const getAllProductDB = async (query: Record<string, unknown>) => {
     result,
   };
 };
+// const getAllProductsDB = async (
+//   filters: Record<string, unknown>,
+//   sort: Record<string, SortOrder>,
+//   limit: number,
+//   page: number,
+// ) => {
+//   const { searchTerm, ...filterData } = filters;
+
+//   const conditions = [];
+
+//   if (searchTerm) {
+//     conditions.push({
+//       $or: ['name', 'brand', 'model', 'category'].map((field) => ({
+//         [field]: {
+//           $regex: searchTerm,
+//           $options: 'i',
+//         },
+//       })),
+//     });
+//   }
+
+//   if (Object.keys(filterData).length) {
+//     conditions.push({
+//       $and: Object.entries(filterData).map(([field, value]) => ({
+//         [field]: value,
+//       })),
+//     });
+//   }
+
+//   const whereConditions = conditions.length > 0 ? { $and: conditions } : {};
+
+//   const result = await Product.find(whereConditions)
+//     .sort(sort)
+//     .skip((page - 1) * limit)
+//     .limit(limit);
+
+//   const total = await Product.countDocuments(whereConditions);
+
+//   return {
+//     data: result,
+//     total,
+//     page,
+//     limit,
+//     totalPages: Math.ceil(total / limit),
+//   };
+// };
 
 const getSingleProductDB = async (id: string) => {
   const result = await Product.findById(id);
@@ -50,7 +96,6 @@ const updateProductDB = async (id: string, payload: Partial<TProduct>) => {
       );
     }
     payload.stock = newStock;
-    payload.inStock = newStock > 0;
   }
   const result = await Product.findByIdAndUpdate(id, payload, {
     new: true,
@@ -69,7 +114,7 @@ const deleteProductDB = async (id: string) => {
 
 export const ProductServices = {
   createProductIntoDB,
-  getAllProductDB,
+  getAllProductsDB,
   getSingleProductDB,
   updateProductDB,
   deleteProductDB,

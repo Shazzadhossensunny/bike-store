@@ -1,37 +1,62 @@
 import mongoose, { Types } from 'mongoose';
 import QueryBuilder from '../../builder/QueryBuilder';
 import { Product } from '../Product/product.model';
-import { TOrder } from './order.interface';
+import { TOrder, TOrderStatus } from './order.interface';
 import { Order } from './order.model';
 import AppError from '../../errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 
-const createOrderIntoDB = async (orderData: TOrder) => {
-  console.log(orderData);
+const createOrderIntoDB = async (userId: string, payload: Partial<TOrder>) => {
   const session = await mongoose.startSession();
-
   try {
     session.startTransaction();
 
-    for (const item of orderData.products) {
-      const product = await Product.findById(item.product).session(session);
-      if (!product || product.stock < item.quantity) {
+    // Check stock and calculate total amount
+    const { products, shippingAddress } = payload;
+    let totalAmount = 0;
+
+    for (const item of products!) {
+      const product = await Product.findById(item.productId).session(session);
+
+      if (!product) {
         throw new AppError(
-          StatusCodes.BAD_REQUEST,
-          `Insufficient stock for product ${item.product}`,
+          StatusCodes.NOT_FOUND,
+          `Product ${item.productId} not found`,
         );
       }
 
+      if (product.stock < item.quantity) {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          `Insufficient stock for product ${product.name}`,
+        );
+      }
+
+      // Update stock
       await Product.findByIdAndUpdate(
-        item.product,
-        { $inc: { stock: -item.quantity, inStock: { $gt: 0 } } },
-        { session },
+        item.productId,
+        { $inc: { stock: -item.quantity } },
+        { session, new: true },
       );
+
+      totalAmount += product.price * item.quantity;
     }
 
-    const result = await Order.create([orderData], { session });
+    // Create order
+    const order = await Order.create(
+      [
+        {
+          user: userId,
+          products,
+          totalAmount,
+          shippingAddress,
+        },
+      ],
+      { session },
+    );
+
     await session.commitTransaction();
-    return result[0];
+    return order[0];
   } catch (error) {
     await session.abortTransaction();
     throw error;
@@ -40,58 +65,37 @@ const createOrderIntoDB = async (orderData: TOrder) => {
   }
 };
 
-const getAllOrdersDB = async (query: Record<string, unknown>) => {
-  const orderQuery = new QueryBuilder(
-    Order.find().populate('user', 'name email').populate('products.product'),
-    query,
-  )
-    .filter()
-    .sort()
-    .paginate()
-    .fields();
+// const getAllOrdersDB = async (query: Record<string, unknown>) => {
+//   const orderQuery = new QueryBuilder(
+//     Order.find().populate('user', 'name email').populate('products.product'),
+//     query,
+//   )
+//     .filter()
+//     .sort()
+//     .paginate()
+//     .fields();
 
-  const [meta, result] = await Promise.all([
-    orderQuery.countTotal(),
-    orderQuery.modelQuery,
-  ]);
+//   const [meta, result] = await Promise.all([
+//     orderQuery.countTotal(),
+//     orderQuery.modelQuery,
+//   ]);
 
-  return { meta, result };
-};
-
-const getUserOrdersDB = async (
-  userId: Types.ObjectId,
-  query: Record<string, unknown>,
-) => {
-  const orderQuery = new QueryBuilder(
-    Order.find({ user: userId })
-      .populate('products.product')
-      .populate('user', 'name email'),
-    query,
-  )
-    .filter()
-    .sort()
-    .paginate()
-    .fields();
-
-  const [meta, result] = await Promise.all([
-    orderQuery.countTotal(),
-    orderQuery.modelQuery,
-  ]);
-
-  return { meta, result };
+//   return { meta, result };
+// };
+const getAllOrdersDB = async (userId: string, role: string) => {
+  const query = role === 'admin' ? {} : { user: userId };
+  const orders = await Order.find(query).populate('user', 'name email');
+  return orders;
 };
 
 const getSingleOrderDB = async (
   orderId: string,
-  userId: Types.ObjectId,
+  userId: string,
   role: string,
 ) => {
   const query =
     role === 'admin' ? { _id: orderId } : { _id: orderId, user: userId };
-
-  const order = await Order.findOne(query)
-    .populate('products.product')
-    .populate('user', 'name email');
+  const order = await Order.findOne(query).populate('user', 'name email');
 
   if (!order) {
     throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
@@ -99,33 +103,24 @@ const getSingleOrderDB = async (
 
   return order;
 };
-
-// const getOrdersByEmail = async (email: string) => {
-//   const user = await User.findOne({ email });
-//   if (!user) {
-//     throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
-//   }
-
-//   const orders = await Order.find({ user: user._id })
-//     .populate('products.product')
-//     .populate('user', 'name email');
-
-//   return orders;
-// };
 
 const updateOrderStatusDB = async (
   orderId: string,
-  payload: {
-    status: TOrder['status'];
-    estimatedDeliveryDate?: Date;
-  },
+  status: TOrderStatus,
+  role: string,
 ) => {
-  const order = await Order.findByIdAndUpdate(orderId, payload, {
-    new: true,
-    runValidators: true,
-  })
-    .populate('products.product')
-    .populate('user', 'name email');
+  if (role !== 'admin') {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'Only admin can update order status',
+    );
+  }
+
+  const order = await Order.findByIdAndUpdate(
+    orderId,
+    { status },
+    { new: true },
+  );
 
   if (!order) {
     throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
@@ -133,6 +128,32 @@ const updateOrderStatusDB = async (
 
   return order;
 };
+
+// const processPayment = async (orderId: string, paymentInfo: any) => {
+//   const session = await mongoose.startSession();
+//   try {
+//     session.startTransaction();
+
+//     const order = await Order.findById(orderId).session(session);
+//     if (!order) {
+//       throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
+//     }
+
+//     // Here you would integrate with SurjoPay
+//     // For now, we'll just update the payment status
+//     order.paymentStatus = 'completed';
+//     order.paymentInfo = paymentInfo;
+//     await order.save({ session });
+
+//     await session.commitTransaction();
+//     return order;
+//   } catch (error) {
+//     await session.abortTransaction();
+//     throw error;
+//   } finally {
+//     session.endSession();
+//   }
+// };
 
 const deleteOrderDB = async (orderId: string, role: string) => {
   const order = await Order.findById(orderId);
@@ -157,9 +178,7 @@ const deleteOrderDB = async (orderId: string, role: string) => {
 export const OrderService = {
   createOrderIntoDB,
   getAllOrdersDB,
-  getUserOrdersDB,
   getSingleOrderDB,
   updateOrderStatusDB,
   deleteOrderDB,
-  // getOrdersByEmail,
 };

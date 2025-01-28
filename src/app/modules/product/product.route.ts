@@ -4,20 +4,20 @@ import { USER_ROLE } from '../User/user.constant';
 import auth from '../../middlewares/auth';
 import validateRequest from '../../middlewares/validateRequest';
 import {
-  productValidationSchema,
+  createProductValidationSchema,
   updateProductValidationSchema,
 } from './product.validation';
 
 const router = express.Router();
 
-router.get('/', ProductController.getAllProduct);
-router.get('/:id', ProductController.getSingleProduct);
 router.post(
   '/',
   auth(USER_ROLE.admin),
-  validateRequest(productValidationSchema),
+  validateRequest(createProductValidationSchema),
   ProductController.createProduct,
 );
+
+router.get('/:id', ProductController.getSingleProduct);
 
 router.patch(
   '/:id',
@@ -27,5 +27,6 @@ router.patch(
 );
 
 router.delete('/:id', auth(USER_ROLE.admin), ProductController.deleteProduct);
+router.get('/', ProductController.getAllProducts);
 
 export const ProductRoute = router;

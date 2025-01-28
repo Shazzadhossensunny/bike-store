@@ -10,16 +10,20 @@ const orderSchema = new Schema<TOrder>(
     },
     products: [
       {
-        product: {
+        productId: {
           type: Schema.Types.ObjectId,
           ref: 'Product',
           required: true,
         },
-        quantity: {
-          type: Number,
+        name: {
+          type: String,
           required: true,
         },
         price: {
+          type: Number,
+          required: true,
+        },
+        quantity: {
           type: Number,
           required: true,
         },
@@ -39,12 +43,30 @@ const orderSchema = new Schema<TOrder>(
       enum: ['pending', 'completed'],
       default: 'pending',
     },
-    estimatedDeliveryDate: {
-      type: Date,
+    shippingAddress: {
+      address: {
+        type: String,
+        required: true,
+      },
+      city: {
+        type: String,
+        required: true,
+      },
+      postalCode: {
+        type: String,
+        required: true,
+      },
+    },
+    paymentInfo: {
+      transactionId: String,
+      paymentMethod: String,
     },
   },
   {
     timestamps: true,
+    toJSON: {
+      virtuals: true,
+    },
   },
 );
 

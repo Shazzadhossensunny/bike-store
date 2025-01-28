@@ -5,7 +5,10 @@ import { StatusCodes } from 'http-status-codes';
 import { ProductServices } from './product.service';
 // create a bike
 const createProduct = catchAsync(async (req, res) => {
-  const result = await ProductServices.createProductIntoDB(req.body);
+  const result = await ProductServices.createProductIntoDB({
+    ...req.body,
+    createdBy: req.user.userId,
+  });
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
@@ -14,8 +17,8 @@ const createProduct = catchAsync(async (req, res) => {
   });
 });
 // get all bike
-const getAllProduct = catchAsync(async (req, res) => {
-  const result = await ProductServices.getAllProductDB(req.query);
+const getAllProducts = catchAsync(async (req, res) => {
+  const result = await ProductServices.getAllProductsDB(req.query);
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
@@ -24,6 +27,32 @@ const getAllProduct = catchAsync(async (req, res) => {
     data: result.result,
   });
 });
+
+// const getAllProducts = catchAsync(async (req: Request, res: Response) => {
+//   const filters = pick(req.query, [
+//     'searchTerm',
+//     'brand',
+//     'category',
+//     'minPrice',
+//     'maxPrice',
+//   ]);
+//   const sort = pick(req.query, ['sortBy', 'sortOrder']);
+//   const paginationOptions = pick(req.query, ['page', 'limit']);
+
+//   const result = await ProductServices.getAllProductsDB(
+//     filters,
+//     sort as { [key: string]: SortOrder },
+//     Number(paginationOptions.limit) || 10,
+//     Number(paginationOptions.page) || 1,
+//   );
+
+//   sendResponse(res, {
+//     statusCode: StatusCodes.OK,
+//     success: true,
+//     message: 'Products retrieved successfully',
+//     data: result,
+//   });
+// });
 
 // get single bike by id
 const getSingleProduct = catchAsync(async (req, res) => {
@@ -60,7 +89,7 @@ const deleteProduct = catchAsync(async (req: Request, res: Response) => {
 
 export const ProductController = {
   createProduct,
-  getAllProduct,
+  getAllProducts,
   getSingleProduct,
   updateSingleProduct,
   deleteProduct,
