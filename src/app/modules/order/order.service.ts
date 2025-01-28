@@ -11,7 +11,6 @@ const createOrderIntoDB = async (userId: string, payload: Partial<TOrder>) => {
   try {
     session.startTransaction();
 
-    // Check stock and calculate total amount
     const { products, shippingAddress } = payload;
     let totalAmount = 0;
 
@@ -32,7 +31,6 @@ const createOrderIntoDB = async (userId: string, payload: Partial<TOrder>) => {
         );
       }
 
-      // Update stock
       await Product.findByIdAndUpdate(
         item.productId,
         { $inc: { stock: -item.quantity } },
@@ -42,7 +40,6 @@ const createOrderIntoDB = async (userId: string, payload: Partial<TOrder>) => {
       totalAmount += product.price * item.quantity;
     }
 
-    // Create order
     const order = await Order.create(
       [
         {
@@ -83,9 +80,17 @@ const createOrderIntoDB = async (userId: string, payload: Partial<TOrder>) => {
 //   return { meta, result };
 // };
 const getAllOrdersDB = async (userId: string, role: string) => {
-  const query = role === 'admin' ? {} : { user: userId };
-  const orders = await Order.find(query).populate('user', 'name email');
-  return orders;
+  if (role === 'admin') {
+    return await Order.find()
+      .populate('user', 'name email')
+      .populate('products.productId', 'name brand price');
+  } else {
+    // For customers, only return their own orders
+    return await Order.find({ user: userId }).populate(
+      'products.productId',
+      'name brand price',
+    );
+  }
 };
 
 const getSingleOrderDB = async (
@@ -95,10 +100,15 @@ const getSingleOrderDB = async (
 ) => {
   const query =
     role === 'admin' ? { _id: orderId } : { _id: orderId, user: userId };
-  const order = await Order.findOne(query).populate('user', 'name email');
+  const order = await Order.findOne(query)
+    .populate('user', 'name email')
+    .populate('products.productId', 'name brand price');
 
   if (!order) {
-    throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
+    throw new AppError(
+      StatusCodes.NOT_FOUND,
+      'Order not found or you do not have permission to view this order',
+    );
   }
 
   return order;
@@ -120,7 +130,7 @@ const updateOrderStatusDB = async (
     orderId,
     { status },
     { new: true },
-  );
+  ).populate('products.productId', 'name brand price');
 
   if (!order) {
     throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
@@ -156,12 +166,6 @@ const updateOrderStatusDB = async (
 // };
 
 const deleteOrderDB = async (orderId: string, role: string) => {
-  const order = await Order.findById(orderId);
-
-  if (!order) {
-    throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
-  }
-
   // Only allow deletion for admins
   if (role !== 'admin') {
     throw new AppError(
@@ -169,10 +173,12 @@ const deleteOrderDB = async (orderId: string, role: string) => {
       'You are not authorized to delete this order',
     );
   }
+  const order = await Order.findByIdAndDelete(orderId);
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
+  }
 
-  await Order.findByIdAndDelete(orderId);
-
-  return { message: 'Order successfully deleted' };
+  return order;
 };
 
 export const OrderService = {

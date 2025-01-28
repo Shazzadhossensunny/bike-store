@@ -21,8 +21,8 @@ const createOrder = catchAsync(async (req, res) => {
 
 const getAllOrders = catchAsync(async (req, res) => {
   const result = await OrderService.getAllOrdersDB(
-    req.user.userId,
-    req.user.role,
+    req.user?.userId,
+    req.user?.role,
   );
 
   sendResponse(res, {
@@ -75,7 +75,7 @@ const deleteOrder = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: result.message,
+    message: 'Order deleted successfully',
     data: result,
   });
 });
