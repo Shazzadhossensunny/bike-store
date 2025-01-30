@@ -8,7 +8,6 @@ import { User } from '../User/user.model';
 
 const loginUser = async (payload: TLoginUser) => {
   const user = await User.isUserExistsByEmail(payload.email);
-
   if (!user) {
     throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
   }

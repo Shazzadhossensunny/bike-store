@@ -8,7 +8,7 @@ export const createProductValidationSchema = z.object({
     price: z.number().min(0, 'Price must be positive'),
     category: z.string().min(1, 'Category is required'),
     stock: z.number().min(0, 'Stock must be non-negative'),
-    image: z.string().min(1, 'Image URL is required'),
+    image: z.string().url('Invalid image URL'),
     description: z.string().min(1, 'Description is required'),
   }),
 });

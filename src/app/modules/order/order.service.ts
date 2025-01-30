@@ -1,19 +1,29 @@
-import mongoose, { Types } from 'mongoose';
-import QueryBuilder from '../../builder/QueryBuilder';
+import mongoose from 'mongoose';
+import { TOrder } from './order.interface';
 import { Product } from '../Product/product.model';
-import { TOrder, TOrderStatus } from './order.interface';
-import { Order } from './order.model';
 import AppError from '../../errors/AppError';
 import { StatusCodes } from 'http-status-codes';
+import { Order } from './order.model';
+import { SurjoPayCustomer } from '../Payment/payment.interface';
+import { PaymentService } from '../Payment/payment.service';
 
 const createOrderIntoDB = async (userId: string, payload: Partial<TOrder>) => {
+  // Validate userId
+  if (!userId) {
+    throw new AppError(StatusCodes.BAD_REQUEST, 'User ID is required');
+  }
   const session = await mongoose.startSession();
+
   try {
     session.startTransaction();
 
     const { products, shippingAddress } = payload;
     let totalAmount = 0;
 
+    // Create an array to store the complete product information
+    const orderProducts = [];
+
+    // Process each product
     for (const item of products!) {
       const product = await Product.findById(item.productId).session(session);
 
@@ -31,22 +41,33 @@ const createOrderIntoDB = async (userId: string, payload: Partial<TOrder>) => {
         );
       }
 
+      // Update product stock
       await Product.findByIdAndUpdate(
         item.productId,
         { $inc: { stock: -item.quantity } },
         { session, new: true },
       );
 
+      // Calculate total amount and store complete product info
       totalAmount += product.price * item.quantity;
+      orderProducts.push({
+        productId: item.productId,
+        name: product.name,
+        price: product.price,
+        quantity: item.quantity,
+      });
     }
 
+    // Create the order with complete product information
     const order = await Order.create(
       [
         {
           user: userId,
-          products,
+          products: orderProducts,
           totalAmount,
           shippingAddress,
+          status: 'pending',
+          paymentStatus: 'pending',
         },
       ],
       { session },
@@ -62,35 +83,54 @@ const createOrderIntoDB = async (userId: string, payload: Partial<TOrder>) => {
   }
 };
 
-// const getAllOrdersDB = async (query: Record<string, unknown>) => {
-//   const orderQuery = new QueryBuilder(
-//     Order.find().populate('user', 'name email').populate('products.product'),
-//     query,
-//   )
-//     .filter()
-//     .sort()
-//     .paginate()
-//     .fields();
+const initiatePaymentDB = async (
+  orderId: string,
+  customerInfo: SurjoPayCustomer,
+) => {
+  console.log('Initiating payment for order:', orderId);
+  console.log('Customer info:', customerInfo);
 
-//   const [meta, result] = await Promise.all([
-//     orderQuery.countTotal(),
-//     orderQuery.modelQuery,
-//   ]);
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
+  }
 
-//   return { meta, result };
-// };
-const getAllOrdersDB = async (userId: string, role: string) => {
-  if (role === 'admin') {
-    return await Order.find()
-      .populate('user', 'name email')
-      .populate('products.productId', 'name brand price');
-  } else {
-    // For customers, only return their own orders
-    return await Order.find({ user: userId }).populate(
-      'products.productId',
-      'name brand price',
+  console.log('Found order:', order);
+
+  if (order.paymentStatus === 'completed') {
+    throw new AppError(StatusCodes.BAD_REQUEST, 'Order is already paid');
+  }
+
+  try {
+    const paymentResponse = await PaymentService.initiatePayment(
+      orderId,
+      customerInfo,
+    );
+
+    console.log('Surjopay response:', paymentResponse);
+    order.paymentOrderId = paymentResponse.paymentId;
+    await order.save();
+
+    return {
+      paymentUrl: paymentResponse.paymentUrl,
+      paymentId: paymentResponse.paymentId,
+      orderId: order._id,
+    };
+  } catch (error) {
+    console.error('Error from Surjopay:', error);
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'Failed to initiate payment: ' + (error.message || 'Unknown error'),
     );
   }
+};
+
+const getAllOrdersDB = async (userId: string, role: string) => {
+  const query = role === 'admin' ? {} : { user: userId };
+  return await Order.find(query)
+    .populate('user', 'name email')
+    .populate('products.productId', 'name brand price')
+    .sort({ createdAt: -1 });
 };
 
 const getSingleOrderDB = async (
@@ -105,10 +145,7 @@ const getSingleOrderDB = async (
     .populate('products.productId', 'name brand price');
 
   if (!order) {
-    throw new AppError(
-      StatusCodes.NOT_FOUND,
-      'Order not found or you do not have permission to view this order',
-    );
+    throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
   }
 
   return order;
@@ -126,63 +163,51 @@ const updateOrderStatusDB = async (
     );
   }
 
-  const order = await Order.findByIdAndUpdate(
-    orderId,
-    { status },
-    { new: true },
-  ).populate('products.productId', 'name brand price');
-
+  const order = await Order.findById(orderId);
   if (!order) {
     throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
   }
 
-  return order;
+  if (order.paymentStatus !== 'completed' && status !== 'cancelled') {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'Cannot update status until payment is completed',
+    );
+  }
+
+  order.status = status;
+  await order.save();
+
+  return order.populate('products.productId', 'name brand price');
 };
 
-// const processPayment = async (orderId: string, paymentInfo: any) => {
-//   const session = await mongoose.startSession();
-//   try {
-//     session.startTransaction();
-
-//     const order = await Order.findById(orderId).session(session);
-//     if (!order) {
-//       throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
-//     }
-
-//     // Here you would integrate with SurjoPay
-//     // For now, we'll just update the payment status
-//     order.paymentStatus = 'completed';
-//     order.paymentInfo = paymentInfo;
-//     await order.save({ session });
-
-//     await session.commitTransaction();
-//     return order;
-//   } catch (error) {
-//     await session.abortTransaction();
-//     throw error;
-//   } finally {
-//     session.endSession();
-//   }
-// };
-
 const deleteOrderDB = async (orderId: string, role: string) => {
-  // Only allow deletion for admins
   if (role !== 'admin') {
     throw new AppError(
       StatusCodes.FORBIDDEN,
       'You are not authorized to delete this order',
     );
   }
-  const order = await Order.findByIdAndDelete(orderId);
+
+  const order = await Order.findById(orderId);
   if (!order) {
     throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
   }
 
+  if (order.paymentStatus === 'completed') {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'Cannot delete order with completed payment',
+    );
+  }
+
+  await order.deleteOne();
   return order;
 };
 
 export const OrderService = {
   createOrderIntoDB,
+  initiatePaymentDB,
   getAllOrdersDB,
   getSingleOrderDB,
   updateOrderStatusDB,

@@ -1,0 +1,219 @@
+import axios from 'axios';
+import { Order } from '../Order/order.model';
+import { SurjoPayCustomer, SurjoPayAuthResponse } from './payment.interface';
+import AppError from '../../errors/AppError';
+import { StatusCodes } from 'http-status-codes';
+import { surjoPayConfig } from '../../config';
+import mongoose from 'mongoose';
+
+export const getAuthToken = async (): Promise<SurjoPayAuthResponse> => {
+  try {
+    const response = await axios.post(
+      `${surjoPayConfig.SP_ENDPOINT}/get_token`,
+      {
+        username: surjoPayConfig.SP_USERNAME,
+        password: surjoPayConfig.SP_PASSWORD,
+      },
+    );
+
+    if (!response.data.token) {
+      throw new Error('Failed to get authentication token');
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Auth token error:', error.response?.data || error);
+    throw new AppError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Payment gateway authentication failed',
+    );
+  }
+};
+
+const buildCallbackUrl = (
+  baseUrl: string,
+  orderId: string,
+  paymentId: string,
+) => {
+  const url = new URL(baseUrl);
+
+  // Clear existing parameters to avoid duplication
+  url.search = '';
+
+  // Add parameters correctly
+  url.searchParams.append('internal_order_id', orderId);
+  url.searchParams.append('sp_payment_id', paymentId);
+
+  return url.toString();
+};
+
+const initiatePayment = async (
+  orderId: string,
+  customer: SurjoPayCustomer,
+  req: any,
+) => {
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
+  }
+
+  if (order.paymentStatus === 'completed') {
+    throw new AppError(StatusCodes.BAD_REQUEST, 'Order is already paid');
+  }
+
+  try {
+    const authResponse = await getAuthToken();
+    const clientIp = req?.ip || req?.connection?.remoteAddress || '127.0.0.1';
+
+    // Build callback URLs with ONLY your order ID
+    const returnUrl = new URL(surjoPayConfig.SP_RETURN_URL);
+    returnUrl.searchParams.append('internal_order_id', orderId);
+
+    const cancelUrl = new URL(surjoPayConfig.SP_CANCEL_URL);
+    cancelUrl.searchParams.append('internal_order_id', orderId);
+
+    // 1. First prepare initial payment data without URLs
+    const initialPaymentData = {
+      prefix: surjoPayConfig.SP_PREFIX,
+      token: authResponse.token,
+      store_id: authResponse.store_id,
+      order_id: orderId,
+      return_url: returnUrl.toString(),
+      cancel_url: cancelUrl.toString(),
+      amount: order.totalAmount,
+      currency: 'BDT',
+      customer_name: customer.name,
+      customer_email: customer.email,
+      customer_phone: customer.phone,
+      customer_address: customer.address,
+      customer_city: customer.city,
+      client_ip: clientIp,
+    };
+
+    // 2. Make initial payment request
+    // const paymentResponse = await axios.post(
+    //   `${surjoPayConfig.SP_ENDPOINT}/secret-pay`,
+    //   initialPaymentData,
+    //   {
+    //     headers: {
+    //       Authorization: `Bearer ${authResponse.token}`,
+    //       'Content-Type': 'multipart/form-data',
+    //     },
+    //   },
+    // );
+
+    // 3. Now we have paymentResponse declared
+    // const spPaymentId = paymentResponse.data?.sp_order_id;
+
+    // 4. Build callback URLs AFTER getting the response
+    // const returnUrl = buildCallbackUrl(
+    //   surjoPayConfig.SP_RETURN_URL,
+    //   orderId,
+    //   spPaymentId,
+    // );
+    // const cancelUrl = buildCallbackUrl(
+    //   surjoPayConfig.SP_CANCEL_URL,
+    //   orderId,
+    //   spPaymentId,
+    // );
+
+    // 5. Update payment data with URLs
+    // const updatedPaymentData = {
+    //   ...initialPaymentData,
+    //   return_url: returnUrl,
+    //   cancel_url: cancelUrl,
+    // };
+
+    // 6. Make final payment request with complete data
+    const finalPaymentResponse = await axios.post(
+      `${surjoPayConfig.SP_ENDPOINT}/secret-pay`,
+      initialPaymentData,
+      {
+        headers: {
+          Authorization: `Bearer ${authResponse.token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
+
+    // 7. Save payment ID to order
+    order.paymentOrderId = finalPaymentResponse.data?.sp_order_id;
+    await order.save();
+
+    return {
+      paymentUrl: finalPaymentResponse.data?.checkout_url,
+      paymentId: finalPaymentResponse.data?.sp_order_id,
+    };
+  } catch (error) {
+    console.error('Payment initiation failed:', error.response?.data || error);
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'Payment initiation failed: ' + error.message,
+    );
+  }
+};
+
+export const verifyPaymentWithShurjoPay = async (paymentId: string) => {
+  try {
+    const authResponse = await getAuthToken();
+    const verification = await axios.post(
+      `${surjoPayConfig.SP_ENDPOINT}/verification`,
+      { order_id: paymentId },
+      {
+        headers: {
+          Authorization: `Bearer ${authResponse.token}`,
+        },
+      },
+    );
+    return verification.data[0];
+  } catch (error) {
+    console.error(
+      'Payment verification failed:',
+      error.response?.data || error,
+    );
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      'Payment verification failed: ' + error.message,
+    );
+  }
+};
+
+const handlePaymentSuccess = async (orderId: string, paymentId: string) => {
+  // Validate order ID format
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    throw new AppError(StatusCodes.BAD_REQUEST, 'Invalid order ID format');
+  }
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
+  }
+
+  // Verify payment with ShurjoPay
+  const verificationData = await verifyPaymentWithShurjoPay(paymentId);
+
+  if (verificationData.sp_code !== 1000) {
+    throw new AppError(
+      StatusCodes.BAD_REQUEST,
+      `Payment failed: ${verificationData?.sp_message}`,
+    );
+  }
+
+  // Update order status
+  order.paymentStatus = 'completed';
+  order.paymentInfo = {
+    status: 'success',
+    transactionId: verificationData.bank_trx_id,
+    amount: verificationData.amount,
+    currency: 'BDT',
+    paidAt: new Date(),
+  };
+
+  await order.save();
+  return order;
+};
+
+export const PaymentService = {
+  initiatePayment,
+  handlePaymentSuccess,
+};

@@ -16,17 +16,22 @@ const auth = (...requiredRoles: TUserRole[]) => {
       throw new AppError(StatusCodes.UNAUTHORIZED, 'You are not authorized!');
     }
 
+    // Extract the token from Bearer format
+    const tokenWithoutBearer = token.startsWith('Bearer ')
+      ? token.split(' ')[1]
+      : token;
+
     // checking if the given token is valid
     let decoded;
     try {
       decoded = jwt.verify(
-        token,
+        tokenWithoutBearer,
         config.jwt_access_secret as string,
       ) as JwtPayload;
     } catch (err) {
       throw new AppError(StatusCodes.UNAUTHORIZED, 'Unauthorized');
     }
-    const { role, email, iat } = decoded;
+    const { role, email, iat, id } = decoded;
 
     // checking if the user is exist
     const user = await User.isUserExistsByEmail(email);
@@ -41,7 +46,11 @@ const auth = (...requiredRoles: TUserRole[]) => {
       );
     }
 
-    req.user = decoded as JwtPayload & { role: string };
+    // req.user = decoded as JwtPayload & { role: string };
+    req.user = { ...decoded, id: id || user._id } as JwtPayload & {
+      role: string;
+      id: string;
+    };
     next();
   });
 };

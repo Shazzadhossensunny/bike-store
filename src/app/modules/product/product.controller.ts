@@ -28,32 +28,6 @@ const getAllProducts = catchAsync(async (req, res) => {
   });
 });
 
-// const getAllProducts = catchAsync(async (req: Request, res: Response) => {
-//   const filters = pick(req.query, [
-//     'searchTerm',
-//     'brand',
-//     'category',
-//     'minPrice',
-//     'maxPrice',
-//   ]);
-//   const sort = pick(req.query, ['sortBy', 'sortOrder']);
-//   const paginationOptions = pick(req.query, ['page', 'limit']);
-
-//   const result = await ProductServices.getAllProductsDB(
-//     filters,
-//     sort as { [key: string]: SortOrder },
-//     Number(paginationOptions.limit) || 10,
-//     Number(paginationOptions.page) || 1,
-//   );
-
-//   sendResponse(res, {
-//     statusCode: StatusCodes.OK,
-//     success: true,
-//     message: 'Products retrieved successfully',
-//     data: result,
-//   });
-// });
-
 // get single bike by id
 const getSingleProduct = catchAsync(async (req, res) => {
   const result = await ProductServices.getSingleProductDB(req.params.id);
@@ -76,7 +50,7 @@ const updateSingleProduct = catchAsync(async (req, res) => {
   });
 });
 
-const deleteProduct = catchAsync(async (req: Request, res: Response) => {
+const deleteProduct = catchAsync(async (req, res) => {
   const result = await ProductServices.deleteProductDB(req.params.id);
 
   sendResponse(res, {

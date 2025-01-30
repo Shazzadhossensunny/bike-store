@@ -16,6 +16,12 @@ router.post(
   validateRequest(createOrderValidationSchema),
   OrderController.createOrder,
 );
+router.post(
+  '/:orderId/payment',
+  auth(USER_ROLE.customer),
+  OrderController.initiatePayment,
+);
+
 router.get(
   '/:id',
   auth(USER_ROLE.customer, USER_ROLE.admin),
@@ -27,6 +33,7 @@ router.get(
   auth(USER_ROLE.admin, USER_ROLE.customer),
   OrderController.getAllOrders,
 );
+
 router.patch(
   '/:id/status',
   auth(USER_ROLE.admin),
@@ -35,11 +42,5 @@ router.patch(
 );
 
 router.delete('/:id', auth(USER_ROLE.admin), OrderController.deleteOrder);
-
-// router.post(
-//   '/:id/payment',
-//   auth(USER_ROLE.customer),
-//   OrderControllers.processPayment,
-// );
 
 export const OrderRoute = router;

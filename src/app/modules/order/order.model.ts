@@ -3,6 +3,11 @@ import { TOrder } from './order.interface';
 
 const orderSchema = new Schema<TOrder>(
   {
+    paymentOrderId: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
     user: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -26,6 +31,7 @@ const orderSchema = new Schema<TOrder>(
         quantity: {
           type: Number,
           required: true,
+          min: 1,
         },
       },
     ],
@@ -35,12 +41,12 @@ const orderSchema = new Schema<TOrder>(
     },
     status: {
       type: String,
-      enum: ['pending', 'processing', 'shipped', 'delivered'],
+      enum: ['pending', 'processing', 'confirmed', 'cancelled', 'delivered'],
       default: 'pending',
     },
     paymentStatus: {
       type: String,
-      enum: ['pending', 'completed'],
+      enum: ['pending', 'initiated', 'completed', 'failed'],
       default: 'pending',
     },
     shippingAddress: {
@@ -58,8 +64,25 @@ const orderSchema = new Schema<TOrder>(
       },
     },
     paymentInfo: {
+      status: {
+        type: String,
+        enum: ['pending', 'initiated', 'success', 'failed'],
+        default: 'pending',
+      },
       transactionId: String,
-      paymentMethod: String,
+      paymentMethod: {
+        type: String,
+        default: 'surjopay',
+      },
+      amount: Number,
+      currency: {
+        type: String,
+        default: 'BDT',
+      },
+      paidAmount: Number,
+      paidAt: Date,
+      failureReason: String,
+      paymentDate: String,
     },
   },
   {
@@ -69,5 +92,11 @@ const orderSchema = new Schema<TOrder>(
     },
   },
 );
+
+// Indexes for better query performance
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ paymentStatus: 1, status: 1 });
+orderSchema.index({ paymentOrderId: 1 }, { sparse: true });
+orderSchema.index({ 'paymentInfo.transactionId': 1 }, { sparse: true });
 
 export const Order = model<TOrder>('Order', orderSchema);
