@@ -18,6 +18,7 @@ const initiatePayment = catchAsync(async (req: Request, res: Response) => {
   const result = await OrderService.initiatePaymentDB(
     req.params?.orderId,
     req.body,
+    req,
   );
 
   sendResponse(res, {

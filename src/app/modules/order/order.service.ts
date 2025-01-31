@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { TOrder } from './order.interface';
+import { TOrder, TOrderStatus } from './order.interface';
 import { Product } from '../Product/product.model';
 import AppError from '../../errors/AppError';
 import { StatusCodes } from 'http-status-codes';
@@ -86,6 +86,7 @@ const createOrderIntoDB = async (userId: string, payload: Partial<TOrder>) => {
 const initiatePaymentDB = async (
   orderId: string,
   customerInfo: SurjoPayCustomer,
+  req: any,
 ) => {
   console.log('Initiating payment for order:', orderId);
   console.log('Customer info:', customerInfo);
@@ -105,6 +106,7 @@ const initiatePaymentDB = async (
     const paymentResponse = await PaymentService.initiatePayment(
       orderId,
       customerInfo,
+      req,
     );
 
     console.log('Surjopay response:', paymentResponse);

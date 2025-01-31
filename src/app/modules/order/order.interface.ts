@@ -1,5 +1,12 @@
 import { Types } from 'mongoose';
 
+export type TOrderStatus =
+  | 'pending'
+  | 'processing'
+  | 'confirmed'
+  | 'cancelled'
+  | 'delivered';
+
 export interface TOrderProduct {
   productId: Types.ObjectId;
   name: string;
@@ -31,7 +38,7 @@ export interface TOrder {
   user: Types.ObjectId;
   products: TOrderProduct[];
   totalAmount: number;
-  status: 'pending' | 'processing' | 'confirmed' | 'cancelled' | 'delivered';
+  status: TOrderStatus;
   paymentStatus: 'pending' | 'initiated' | 'completed' | 'failed';
   shippingAddress: TShippingAddress;
   paymentInfo: TPaymentInfo;
