@@ -21,7 +21,7 @@ export const getAuthToken = async (): Promise<SurjoPayAuthResponse> => {
     }
 
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Auth token error:', error.response?.data || error);
     throw new AppError(
       StatusCodes.INTERNAL_SERVER_ERROR,
@@ -144,7 +144,7 @@ const initiatePayment = async (
       paymentUrl: finalPaymentResponse.data?.checkout_url,
       paymentId: finalPaymentResponse.data?.sp_order_id,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Payment initiation failed:', error.response?.data || error);
     throw new AppError(
       StatusCodes.BAD_REQUEST,
@@ -166,7 +166,7 @@ export const verifyPaymentWithShurjoPay = async (paymentId: string) => {
       },
     );
     return verification.data[0];
-  } catch (error) {
+  } catch (error: any) {
     console.error(
       'Payment verification failed:',
       error.response?.data || error,
@@ -216,4 +216,5 @@ const handlePaymentSuccess = async (orderId: string, paymentId: string) => {
 export const PaymentService = {
   initiatePayment,
   handlePaymentSuccess,
+  verifyPaymentWithShurjoPay,
 };
