@@ -30,22 +30,22 @@ export const getAuthToken = async (): Promise<SurjoPayAuthResponse> => {
   }
 };
 
-const buildCallbackUrl = (
-  baseUrl: string,
-  orderId: string,
-  paymentId: string,
-) => {
-  const url = new URL(baseUrl);
+// const buildCallbackUrl = (
+//   baseUrl: string,
+//   orderId: string,
+//   paymentId: string,
+// ) => {
+//   const url = new URL(baseUrl);
 
-  // Clear existing parameters to avoid duplication
-  url.search = '';
+//   // Clear existing parameters to avoid duplication
+//   url.search = '';
 
-  // Add parameters correctly
-  url.searchParams.append('internal_order_id', orderId);
-  url.searchParams.append('sp_payment_id', paymentId);
+//   // Add parameters correctly
+//   url.searchParams.append('internal_order_id', orderId);
+//   url.searchParams.append('sp_payment_id', paymentId);
 
-  return url.toString();
-};
+//   return url.toString();
+// };
 
 const initiatePayment = async (
   orderId: string,
@@ -89,40 +89,6 @@ const initiatePayment = async (
       customer_city: customer.city,
       client_ip: clientIp,
     };
-
-    // 2. Make initial payment request
-    // const paymentResponse = await axios.post(
-    //   `${surjoPayConfig.SP_ENDPOINT}/secret-pay`,
-    //   initialPaymentData,
-    //   {
-    //     headers: {
-    //       Authorization: `Bearer ${authResponse.token}`,
-    //       'Content-Type': 'multipart/form-data',
-    //     },
-    //   },
-    // );
-
-    // 3. Now we have paymentResponse declared
-    // const spPaymentId = paymentResponse.data?.sp_order_id;
-
-    // 4. Build callback URLs AFTER getting the response
-    // const returnUrl = buildCallbackUrl(
-    //   surjoPayConfig.SP_RETURN_URL,
-    //   orderId,
-    //   spPaymentId,
-    // );
-    // const cancelUrl = buildCallbackUrl(
-    //   surjoPayConfig.SP_CANCEL_URL,
-    //   orderId,
-    //   spPaymentId,
-    // );
-
-    // 5. Update payment data with URLs
-    // const updatedPaymentData = {
-    //   ...initialPaymentData,
-    //   return_url: returnUrl,
-    //   cancel_url: cancelUrl,
-    // };
 
     // 6. Make final payment request with complete data
     const finalPaymentResponse = await axios.post(

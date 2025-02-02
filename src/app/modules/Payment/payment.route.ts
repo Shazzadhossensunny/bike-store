@@ -7,11 +7,11 @@ import { initiatePaymentValidationSchema } from './payment.validation';
 
 const router = express.Router();
 router.get('/callback', PaymentController.handlePaymentCallback);
+
 router.post(
   '/initiate/:orderId',
   auth(USER_ROLE.customer),
   validateRequest(initiatePaymentValidationSchema),
   PaymentController.initiatePayment,
 );
-
 export const paymentRoute = router;

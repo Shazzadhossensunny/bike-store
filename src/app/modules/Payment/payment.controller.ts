@@ -61,7 +61,10 @@ const handlePaymentCallback = catchAsync(
     };
     await order.save();
 
-    res.redirect(`/payment-success/${orderId}`);
+    // res.redirect(`/payment-success/${orderId}`);
+    res.redirect(
+      `http://localhost:5173/payment-success/${orderId}?status=success`,
+    );
   },
 );
 
