@@ -4,7 +4,6 @@ import AppError from '../../errors/AppError';
 import { ProductSearchableFields } from './product.constant';
 import { TProduct } from './product.interface';
 import { Product } from './product.model';
-import { SortOrder } from 'mongoose';
 import { Order } from '../Order/order.model';
 
 const createProductIntoDB = async (productData: TProduct) => {
@@ -33,57 +32,12 @@ const getAllProductsDB = async (query: Record<string, unknown>) => {
 
   const meta = await productQuery.countTotal();
   const result = await productQuery.modelQuery;
+
   return {
     meta,
     result,
   };
 };
-// const getAllProductsDB = async (
-//   filters: Record<string, unknown>,
-//   sort: Record<string, SortOrder>,
-//   limit: number,
-//   page: number,
-// ) => {
-//   const { searchTerm, ...filterData } = filters;
-
-//   const conditions = [];
-
-//   if (searchTerm) {
-//     conditions.push({
-//       $or: ['name', 'brand', 'model', 'category'].map((field) => ({
-//         [field]: {
-//           $regex: searchTerm,
-//           $options: 'i',
-//         },
-//       })),
-//     });
-//   }
-
-//   if (Object.keys(filterData).length) {
-//     conditions.push({
-//       $and: Object.entries(filterData).map(([field, value]) => ({
-//         [field]: value,
-//       })),
-//     });
-//   }
-
-//   const whereConditions = conditions.length > 0 ? { $and: conditions } : {};
-
-//   const result = await Product.find(whereConditions)
-//     .sort(sort)
-//     .skip((page - 1) * limit)
-//     .limit(limit);
-
-//   const total = await Product.countDocuments(whereConditions);
-
-//   return {
-//     data: result,
-//     total,
-//     page,
-//     limit,
-//     totalPages: Math.ceil(total / limit),
-//   };
-// };
 
 const getSingleProductDB = async (id: string) => {
   const result = await Product.findById(id);
