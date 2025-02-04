@@ -45,7 +45,7 @@ const getAllOrders = catchAsync(async (req, res) => {
 
 const getSingleOrder = catchAsync(async (req, res) => {
   const result = await OrderService.getSingleOrderDB(
-    req.params.orderId,
+    req.params.id,
     req.user.id,
     req.user.role,
   );
