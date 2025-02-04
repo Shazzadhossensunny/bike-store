@@ -1,5 +1,6 @@
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
+import { TUser } from './user.interface';
 import { UserServices } from './user.service';
 import { StatusCodes } from 'http-status-codes';
 
@@ -18,8 +19,19 @@ const getUserById = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: 'User get successfully',
+    message: 'User is retrieved successfully',
     data: user,
+  });
+});
+
+const getAllUser = catchAsync(async (req, res) => {
+  const result = await UserServices.getAllUser(req.query);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Users are retrieved successfully',
+    meta: result.meta,
+    data: result.result,
   });
 });
 
@@ -44,17 +56,20 @@ const changePassword = catchAsync(async (req, res) => {
 //   });
 // });
 const deleteUserById = catchAsync(async (req, res) => {
-  const deleteUser = await UserServices.deleteUser(req.params.id);
+  const user = req.user as TUser;
+  const deleteUser = await UserServices.deleteUser(req.params.id, user);
+
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: 'User delete successfully',
+    message: 'User deleted successfully',
     data: deleteUser,
   });
 });
 
 export const UserControllers = {
   registerUser,
+  getAllUser,
   getUserById,
   changePassword,
   // updateUserById,

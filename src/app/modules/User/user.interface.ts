@@ -23,4 +23,9 @@ export interface UserModel extends Model<TUser> {
   ): Promise<boolean>;
 }
 
+// types/user.types.ts
+export interface RequestWithUser extends Request {
+  user: TUser;
+}
+
 export type TUserRole = keyof typeof USER_ROLE;

@@ -26,4 +26,6 @@ router.delete(
   UserControllers.deleteUserById,
 );
 
+router.get('/', auth(USER_ROLE.admin), UserControllers.getAllUser);
+
 export const UserRoute = router;
