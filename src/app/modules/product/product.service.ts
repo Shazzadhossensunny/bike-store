@@ -47,6 +47,11 @@ const getSingleProductDB = async (id: string) => {
   return result;
 };
 
+const getFeaturedProductsDB = async () => {
+  const result = await Product.find().limit(6);
+  return result;
+};
+
 const updateProductDB = async (id: string, payload: Partial<TProduct>) => {
   const product = await Product.findById(id);
   if (!product) {
@@ -93,6 +98,7 @@ export const ProductServices = {
   createProductIntoDB,
   getAllProductsDB,
   getSingleProductDB,
+  getFeaturedProductsDB,
   updateProductDB,
   deleteProductDB,
 };

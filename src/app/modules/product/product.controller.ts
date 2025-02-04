@@ -39,6 +39,17 @@ const getSingleProduct = catchAsync(async (req, res) => {
   });
 });
 
+//get featured products
+const getFeaturedProducts = catchAsync(async (req, res) => {
+  const result = await ProductServices.getFeaturedProductsDB();
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Featured Products retrieved successfully',
+    data: result,
+  });
+});
+
 //update single bike by id
 const updateSingleProduct = catchAsync(async (req, res) => {
   const result = await ProductServices.updateProductDB(req.params.id, req.body);
@@ -65,6 +76,7 @@ export const ProductController = {
   createProduct,
   getAllProducts,
   getSingleProduct,
+  getFeaturedProducts,
   updateSingleProduct,
   deleteProduct,
 };

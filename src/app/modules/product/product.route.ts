@@ -17,6 +17,7 @@ router.post(
   ProductController.createProduct,
 );
 
+router.get('/featured', ProductController.getFeaturedProducts);
 router.get('/:id', ProductController.getSingleProduct);
 
 router.patch(
