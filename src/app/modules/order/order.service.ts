@@ -118,7 +118,7 @@ const initiatePaymentDB = async (
       paymentId: paymentResponse.paymentId,
       orderId: order._id,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error from Surjopay:', error);
     throw new AppError(
       StatusCodes.BAD_REQUEST,

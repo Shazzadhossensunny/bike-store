@@ -30,28 +30,13 @@ export const getAuthToken = async (): Promise<SurjoPayAuthResponse> => {
   }
 };
 
-// const buildCallbackUrl = (
-//   baseUrl: string,
-//   orderId: string,
-//   paymentId: string,
-// ) => {
-//   const url = new URL(baseUrl);
-
-//   // Clear existing parameters to avoid duplication
-//   url.search = '';
-
-//   // Add parameters correctly
-//   url.searchParams.append('internal_order_id', orderId);
-//   url.searchParams.append('sp_payment_id', paymentId);
-
-//   return url.toString();
-// };
-
 const initiatePayment = async (
   orderId: string,
-  customer: SurjoPayCustomer,
+  customerInfo: SurjoPayCustomer,
   req: any,
 ) => {
+  console.log('Sending request to SurjoPay with orderId:', orderId);
+  console.log('Customer Info:', customerInfo);
   const order = await Order.findById(orderId);
   if (!order) {
     throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
@@ -82,11 +67,12 @@ const initiatePayment = async (
       cancel_url: cancelUrl.toString(),
       amount: order.totalAmount,
       currency: 'BDT',
-      customer_name: customer.name,
-      customer_email: customer.email,
-      customer_phone: customer.phone,
-      customer_address: customer.address,
-      customer_city: customer.city,
+      customer_name: customerInfo.name,
+      customer_email: customerInfo.email,
+      customer_phone: customerInfo.phone,
+      customer_address: customerInfo.address,
+      customer_city: customerInfo.city,
+      customer_postcode: customerInfo.postalCode,
       client_ip: clientIp,
     };
 

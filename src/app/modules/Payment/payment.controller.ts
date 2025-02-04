@@ -16,7 +16,7 @@ import mongoose from 'mongoose';
 const initiatePayment = catchAsync(async (req: Request, res: Response) => {
   const result = await PaymentService.initiatePayment(
     req.body.orderId,
-    req.body.customer,
+    req.body.customerInfo,
     req as any,
   );
 

@@ -15,6 +15,7 @@ export interface SurjoPayCustomer {
   phone: string;
   address: string;
   city: string;
+  postalCode: string;
 }
 
 export interface SurjoPayAuthResponse {
