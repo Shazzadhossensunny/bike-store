@@ -8,6 +8,8 @@ export interface TUser {
   password: string;
   role: 'customer' | 'admin';
   passwordChangedAt?: Date;
+  isActive: boolean;
+  deactivatedAt?: Date;
 }
 
 export type TChangePassword = {

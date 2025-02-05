@@ -14,7 +14,13 @@ const changePasswordValidation = z.object({
       .min(6, 'New password must be at least 6 characters'),
   }),
 });
+const toggleStatusValidation = z.object({
+  body: z.object({
+    id: z.string(),
+  }),
+});
 export const UserValidation = {
   userValidationSchema,
   changePasswordValidation,
+  toggleStatusValidation,
 };

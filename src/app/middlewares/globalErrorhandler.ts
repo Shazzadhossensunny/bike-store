@@ -10,7 +10,7 @@ import handleDuplicateError from '../errors/handleDuplicateError';
 import AppError from '../errors/AppError';
 import { ErrorRequestHandler } from 'express';
 
-const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+const globalErrorHandler: ErrorRequestHandler = (err, req, res, next): any => {
   //setting default values
   let statusCode = 500;
   let message = 'Something went wrong!';

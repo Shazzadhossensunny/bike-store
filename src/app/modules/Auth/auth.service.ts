@@ -12,6 +12,14 @@ const loginUser = async (payload: TLoginUser) => {
     throw new AppError(StatusCodes.NOT_FOUND, 'User not found!');
   }
 
+  // Check if user is active
+  if (!user.isActive) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'Your account has been deactivated. Please contact support.',
+    );
+  }
+
   const isPasswordMatched = await User.isPasswordMatched(
     payload.password,
     user.password,

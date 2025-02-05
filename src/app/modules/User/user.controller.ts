@@ -48,7 +48,17 @@ const changePassword = catchAsync(async (req, res) => {
     data: result,
   });
 });
+const toggleUserStatus = catchAsync(async (req, res) => {
+  const user = req.user as TUser;
+  const result = await UserServices.toggleUserStatus(req.params.id, user);
 
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: `User ${result?.isActive ? 'activated' : 'deactivated'} successfully`,
+    data: result,
+  });
+});
 // const updateUserById = catchAsync(async (req, res) => {
 //   const updateUser = await UserServices.updateUser(req.params.id, req.body);
 //   sendResponse(res, {
@@ -75,6 +85,7 @@ export const UserControllers = {
   getAllUser,
   getUserById,
   changePassword,
+  toggleUserStatus,
   // updateUserById,
   deleteUserById,
 };

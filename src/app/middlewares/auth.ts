@@ -39,6 +39,14 @@ const auth = (...requiredRoles: TUserRole[]) => {
     if (!user) {
       throw new AppError(StatusCodes.NOT_FOUND, 'This user is not found !');
     }
+    // Check if user is active
+    if (!user.isActive) {
+      throw new AppError(
+        StatusCodes.FORBIDDEN,
+        'Your account has been deactivated. Please contact support.',
+      );
+    }
+
     if (requiredRoles && !requiredRoles.includes(role)) {
       throw new AppError(
         StatusCodes.UNAUTHORIZED,

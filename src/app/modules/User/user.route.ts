@@ -20,6 +20,11 @@ router.post(
   validateRequest(UserValidation.changePasswordValidation),
   UserControllers.changePassword,
 );
+router.patch(
+  '/toggle-status/:id',
+  auth(USER_ROLE.admin),
+  UserControllers.toggleUserStatus,
+);
 router.delete(
   '/:id',
   auth(USER_ROLE.admin, USER_ROLE.customer),

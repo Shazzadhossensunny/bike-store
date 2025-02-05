@@ -91,6 +91,41 @@ const changePassword = async (
   return null;
 };
 
+const toggleUserStatus = async (userId: string, requestUser: TUser) => {
+  // Only admin can toggle user status
+  if (requestUser.role !== USER_ROLE.admin) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'Only admin can activate/deactivate users',
+    );
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+
+  // Prevent deactivating admin accounts
+  if (user.role === USER_ROLE.admin) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'Admin accounts cannot be deactivated',
+    );
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      isActive: !user.isActive,
+      deactivatedAt: !user.isActive ? null : new Date(),
+    },
+    { new: true },
+  );
+
+  return updatedUser;
+};
+
 // const updateUser = async (id: string, updateData: Partial<TUser>) => {
 //   const user = await User.findByIdAndUpdate(id, updateData, { new: true });
 //   if (!user) {
@@ -125,6 +160,7 @@ export const UserServices = {
   findUserById,
   findUserByEmail,
   changePassword,
+  toggleUserStatus,
   // updateUser,
   deleteUser,
 };
