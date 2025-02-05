@@ -41,6 +41,10 @@ router.patch(
   OrderController.updateOrderStatus,
 );
 
-router.delete('/:id', auth(USER_ROLE.admin), OrderController.deleteOrder);
+router.delete(
+  '/:id',
+  auth(USER_ROLE.admin, USER_ROLE.customer),
+  OrderController.deleteOrder,
+);
 
 export const OrderRoute = router;

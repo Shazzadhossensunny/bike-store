@@ -6,6 +6,8 @@ import { StatusCodes } from 'http-status-codes';
 import { Order } from './order.model';
 import { SurjoPayCustomer } from '../Payment/payment.interface';
 import { PaymentService } from '../Payment/payment.service';
+import QueryBuilder from '../../builder/QueryBuilder';
+import { OrderSearchableFields } from './order.constant';
 
 const createOrderIntoDB = async (userId: string, payload: Partial<TOrder>) => {
   // Validate userId
@@ -127,12 +129,48 @@ const initiatePaymentDB = async (
   }
 };
 
-const getAllOrdersDB = async (userId: string, role: string) => {
-  const query = role === 'admin' ? {} : { user: userId };
-  return await Order.find(query)
-    .populate('user', 'name email')
-    .populate('products.productId', 'name brand price')
-    .sort({ createdAt: -1 });
+const getAllOrdersDB = async (
+  query: Record<string, unknown>,
+  userId: string,
+  role: string,
+) => {
+  let orderQuery;
+  //if admin fetch all Orders
+  if (role === 'admin') {
+    orderQuery = new QueryBuilder(
+      Order.find()
+        .populate('user', 'name email')
+        .populate('products.productId', 'name brand price')
+        .sort({ createdAt: -1 }),
+      query,
+    )
+      .search(OrderSearchableFields)
+      .filter()
+      .sort()
+      .paginate()
+      .fields();
+  } else {
+    // If customer, only fetch their own orders
+    orderQuery = new QueryBuilder(
+      Order.find({ user: userId })
+        .populate('user', 'name email')
+        .populate('products.productId', 'name brand price')
+        .sort({ createdAt: -1 }),
+      query,
+    )
+      .search(OrderSearchableFields)
+      .filter()
+      .sort()
+      .paginate()
+      .fields();
+  }
+
+  const result = await orderQuery.modelQuery;
+  const meta = await orderQuery.countTotal();
+  return {
+    result,
+    meta,
+  };
 };
 
 const getSingleOrderDB = async (
@@ -147,14 +185,19 @@ const getSingleOrderDB = async (
     .populate('products.productId', 'name brand price');
 
   if (!order) {
-    throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      role === 'admin'
+        ? 'Order not found'
+        : 'You are not authorized to view this order',
+    );
   }
 
   return order;
 };
 
 const updateOrderStatusDB = async (
-  orderId: string,
+  id: string,
   status: TOrderStatus,
   role: string,
 ) => {
@@ -165,7 +208,7 @@ const updateOrderStatusDB = async (
     );
   }
 
-  const order = await Order.findById(orderId);
+  const order = await Order.findById(id);
   if (!order) {
     throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
   }
@@ -183,25 +226,43 @@ const updateOrderStatusDB = async (
   return order.populate('products.productId', 'name brand price');
 };
 
-const deleteOrderDB = async (orderId: string, role: string) => {
-  if (role !== 'admin') {
-    throw new AppError(
-      StatusCodes.FORBIDDEN,
-      'You are not authorized to delete this order',
-    );
-  }
-
-  const order = await Order.findById(orderId);
+const deleteOrderDB = async (id: string, role: string, userId: string) => {
+  const order = await Order.findById(id);
   if (!order) {
     throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
   }
 
+  // Check if order is completed
   if (order.paymentStatus === 'completed') {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
       'Cannot delete order with completed payment',
     );
   }
+
+  // Authorization check
+  const isAdmin = role === 'admin';
+  const isOrderOwner = order.user.toString() === userId;
+
+  if (!isAdmin && !isOrderOwner) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'You are not authorized to delete this order',
+    );
+  }
+
+  // Restore product stock before deleting
+  // for (const item of order.orderItems) {
+  //   await Product.findByIdAndUpdate(
+  //     item.product,
+  //     {
+  //       $inc: {
+  //         stock: item.quantity,
+  //         soldCount: -item.quantity
+  //       }
+  //     }
+  //   );
+  // }
 
   await order.deleteOne();
   return order;

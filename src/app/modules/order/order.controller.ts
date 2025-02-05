@@ -31,6 +31,7 @@ const initiatePayment = catchAsync(async (req: Request, res: Response) => {
 
 const getAllOrders = catchAsync(async (req, res) => {
   const result = await OrderService.getAllOrdersDB(
+    req.query,
     req.user?.id,
     req.user?.role,
   );
@@ -39,7 +40,8 @@ const getAllOrders = catchAsync(async (req, res) => {
     statusCode: StatusCodes.OK,
     success: true,
     message: 'Orders retrieved successfully',
-    data: result,
+    meta: result.meta,
+    data: result.result,
   });
 });
 
@@ -60,7 +62,7 @@ const getSingleOrder = catchAsync(async (req, res) => {
 
 const updateOrderStatus = catchAsync(async (req, res) => {
   const result = await OrderService.updateOrderStatusDB(
-    req.params.orderId,
+    req.params.id,
     req.body.status,
     req.user.role,
   );
@@ -74,10 +76,10 @@ const updateOrderStatus = catchAsync(async (req, res) => {
 });
 const deleteOrder = catchAsync(async (req: Request, res: Response) => {
   const result = await OrderService.deleteOrderDB(
-    req.params.orderId,
+    req.params.id,
     req.user.role,
+    req.user._id,
   );
-
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
