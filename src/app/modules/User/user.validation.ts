@@ -8,7 +8,7 @@ const userValidationSchema = z.object({
 
 const changePasswordValidation = z.object({
   body: z.object({
-    oldPassword: z.string().min(6, 'Old password is required'),
+    currentPassword: z.string().min(6, 'Old password is required'),
     newPassword: z
       .string()
       .min(6, 'New password must be at least 6 characters'),

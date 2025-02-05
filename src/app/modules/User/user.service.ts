@@ -29,7 +29,20 @@ const getAllUser = async (query: Record<string, unknown>) => {
   };
 };
 
-const findUserById = async (id: string) => {
+const findUserById = async (
+  id: string,
+  requestingUser: { role: string; id: string },
+) => {
+  // Authorization check moved to service layer
+  if (
+    requestingUser.role !== USER_ROLE.admin &&
+    requestingUser.id.toString() !== id
+  ) {
+    throw new AppError(
+      StatusCodes.FORBIDDEN,
+      'Access denied. You can only view your own account.',
+    );
+  }
   const user = await User.findById(id);
   if (!user) {
     throw new AppError(StatusCodes.BAD_REQUEST, 'User not found');
@@ -52,7 +65,7 @@ const changePassword = async (
   }
 
   const isPasswordMatched = await User.isPasswordMatched(
-    payload.oldPassword,
+    payload.currentPassword,
     user?.password,
   );
 

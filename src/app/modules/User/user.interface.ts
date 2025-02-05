@@ -11,7 +11,7 @@ export interface TUser {
 }
 
 export type TChangePassword = {
-  oldPassword: string;
+  currentPassword: string;
   newPassword: string;
 };
 

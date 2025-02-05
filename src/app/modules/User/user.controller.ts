@@ -15,7 +15,10 @@ const registerUser = catchAsync(async (req, res) => {
 });
 
 const getUserById = catchAsync(async (req, res) => {
-  const user = await UserServices.findUserById(req.params.id);
+  const user = await UserServices.findUserById(req.params.id, {
+    role: req.user.role,
+    id: req.user.id,
+  });
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
