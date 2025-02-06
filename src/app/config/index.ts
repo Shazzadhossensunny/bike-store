@@ -3,6 +3,11 @@ import path from 'path';
 
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
+// console.log('Config Loaded:', {
+//   jwt_access_secret: process.env.JWT_ACCESS_SECRET,
+//   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET,
+// });
+
 export interface SurjoPayConfig {
   SP_ENDPOINT: string;
   SP_USERNAME: string;

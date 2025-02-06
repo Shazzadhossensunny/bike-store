@@ -5,7 +5,7 @@ import { TLoginUser } from './auth.interface';
 import { createToken, verifyToken } from './auth.utils';
 import config from '../../config';
 import { User } from '../User/user.model';
-
+import type { StringValue } from 'ms';
 const loginUser = async (payload: TLoginUser) => {
   const user = await User.isUserExistsByEmail(payload.email);
   if (!user) {
@@ -38,15 +38,15 @@ const loginUser = async (payload: TLoginUser) => {
   const accessToken = createToken(
     jwtPayload,
     config.jwt_access_secret as string,
-    config.jwt_access_expires_in as string,
+    config.jwt_access_expires_in as StringValue,
   );
-
+  // console.log('Generated Access Token:', accessToken);
   const refreshToken = createToken(
     jwtPayload,
     config.jwt_refresh_secret as string,
-    config.jwt_refresh_expires_in as string,
+    config.jwt_refresh_expires_in as StringValue,
   );
-
+  // console.log('Generated Access Token:', refreshToken);
   return {
     accessToken,
     refreshToken,
@@ -82,8 +82,10 @@ const refreshToken = async (token: string) => {
   const accessToken = createToken(
     jwtPayload,
     config.jwt_access_secret as string,
-    config.jwt_access_expires_in as string,
+    config.jwt_access_expires_in as StringValue,
   );
+
+  // console.log(accessToken);
 
   return {
     accessToken,
