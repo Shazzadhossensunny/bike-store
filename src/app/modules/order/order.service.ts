@@ -90,8 +90,8 @@ const initiatePaymentDB = async (
   customerInfo: SurjoPayCustomer,
   req: any,
 ) => {
-  console.log('Initiating payment for order:', orderId);
-  console.log('Customer info:', customerInfo);
+  // console.log('Initiating payment for order:', orderId);
+  // console.log('Customer info:', customerInfo);
 
   const order = await Order.findById(orderId);
   if (!order) {
@@ -111,9 +111,12 @@ const initiatePaymentDB = async (
       req,
     );
 
-    console.log('Surjopay response:', paymentResponse);
+    // console.log('Surjopay response:', paymentResponse);
     order.paymentOrderId = paymentResponse.paymentId;
     await order.save();
+
+    // console.log(paymentResponse.paymentUrl);
+    // console.log(paymentResponse.paymentId);
 
     return {
       paymentUrl: paymentResponse.paymentUrl,

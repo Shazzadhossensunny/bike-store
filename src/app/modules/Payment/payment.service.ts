@@ -17,7 +17,10 @@ export const getAuthToken = async (): Promise<SurjoPayAuthResponse> => {
     );
 
     if (!response.data.token) {
-      throw new Error('Failed to get authentication token');
+      throw new AppError(
+        StatusCodes.UNAUTHORIZED,
+        'Failed to get authentication token',
+      );
     }
 
     return response.data;
@@ -83,18 +86,19 @@ const initiatePayment = async (
       {
         headers: {
           Authorization: `Bearer ${authResponse.token}`,
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
         },
       },
     );
 
     // 7. Save payment ID to order
-    order.paymentOrderId = finalPaymentResponse.data?.sp_order_id;
+    order.paymentOrderId = finalPaymentResponse?.data?.sp_order_id;
     await order.save();
+    console.log('Payment initiated successfully:', finalPaymentResponse?.data);
 
     return {
-      paymentUrl: finalPaymentResponse.data?.checkout_url,
-      paymentId: finalPaymentResponse.data?.sp_order_id,
+      paymentUrl: finalPaymentResponse?.data?.checkout_url,
+      paymentId: finalPaymentResponse?.data?.sp_order_id,
     };
   } catch (error: any) {
     console.error('Payment initiation failed:', error.response?.data || error);
