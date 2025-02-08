@@ -111,16 +111,16 @@ const handlePaymentCallback = async (
     await order.save();
 
     // Redirect with success parameters
-    // res.redirect(
-    //   `https://bike-shop-ecru.vercel.app/payment-success/${order._id}?` +
-    //     `status=success&` +
-    //     `payment_id=${spPaymentId}`,
-    // );
     res.redirect(
-      `http://localhost:5173/payment-success/${order._id}?` +
+      `https://bike-shop-ecru.vercel.app/payment-success/${order._id}?` +
         `status=success&` +
         `payment_id=${spPaymentId}`,
     );
+    // res.redirect(
+    //   `http://localhost:5173/payment-success/${order._id}?` +
+    //     `status=success&` +
+    //     `payment_id=${spPaymentId}`,
+    // );
   } catch (error: any) {
     console.error('Unexpected error in payment callback:', error);
     res.status(500).json({
