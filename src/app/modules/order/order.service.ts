@@ -231,21 +231,22 @@ const updateOrderStatusDB = async (
 
 const deleteOrderDB = async (id: string, role: string, userId: string) => {
   const order = await Order.findById(id);
+  console.log(order);
   if (!order) {
     throw new AppError(StatusCodes.NOT_FOUND, 'Order not found');
   }
 
-  // Check if order is completed
+  // ❌ Prevent deletion if payment is completed
   if (order.paymentStatus === 'completed') {
     throw new AppError(
       StatusCodes.BAD_REQUEST,
-      'Cannot delete order with completed payment',
+      'Cannot delete an order with completed payment',
     );
   }
 
-  // Authorization check
+  // Authorization check: Admins can delete any order, users can delete their own orders
   const isAdmin = role === 'admin';
-  const isOrderOwner = order.user.toString() === userId;
+  const isOrderOwner = order.user._id.toString() === userId;
 
   if (!isAdmin && !isOrderOwner) {
     throw new AppError(
@@ -254,18 +255,14 @@ const deleteOrderDB = async (id: string, role: string, userId: string) => {
     );
   }
 
-  // Restore product stock before deleting
-  // for (const item of order.orderItems) {
-  //   await Product.findByIdAndUpdate(
-  //     item.product,
-  //     {
-  //       $inc: {
-  //         stock: item.quantity,
-  //         soldCount: -item.quantity
-  //       }
-  //     }
-  //   );
-  // }
+  // ✅ Restore stock if payment was NOT completed
+  for (const item of order.products) {
+    await Product.findByIdAndUpdate(
+      item.productId,
+      { $inc: { stock: item.quantity } }, // Restore stock
+      { new: true },
+    );
+  }
 
   await order.deleteOne();
   return order;

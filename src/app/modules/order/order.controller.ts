@@ -78,8 +78,9 @@ const deleteOrder = catchAsync(async (req: Request, res: Response) => {
   const result = await OrderService.deleteOrderDB(
     req.params.id,
     req.user.role,
-    req.user._id,
+    req.user.userId,
   );
+
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,

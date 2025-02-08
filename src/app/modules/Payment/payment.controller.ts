@@ -61,7 +61,7 @@ const handlePaymentCallback = async (
       spPaymentId = fixedParts[1]; // Extract the actual order_id
     }
 
-    console.log('✅ Extracted Parameters:', { rawOrderId, spPaymentId });
+    // console.log('✅ Extracted Parameters:', { rawOrderId, spPaymentId });
 
     // Early validation
     if (!rawOrderId || !spPaymentId) {
@@ -111,8 +111,13 @@ const handlePaymentCallback = async (
     await order.save();
 
     // Redirect with success parameters
+    // res.redirect(
+    //   `https://bike-shop-ecru.vercel.app/payment-success/${order._id}?` +
+    //     `status=success&` +
+    //     `payment_id=${spPaymentId}`,
+    // );
     res.redirect(
-      `https://bike-shop-ecru.vercel.app/payment-success/${order._id}?` +
+      `http://localhost:5173/payment-success/${order._id}?` +
         `status=success&` +
         `payment_id=${spPaymentId}`,
     );
