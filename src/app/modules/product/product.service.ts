@@ -47,9 +47,18 @@ const getSingleProductDB = async (id: string) => {
   return result;
 };
 
+// const getFeaturedProductsDB = async () => {
+//   const result = await Product.find().limit(6);
+//   return result;
+// };
+const getCategoriesFromDB = async () => {
+  return await Product.distinct('category');
+};
+
 const getFeaturedProductsDB = async () => {
-  const result = await Product.find().limit(6);
-  return result;
+  return await Product.find()
+    .sort({ createdAt: -1 }) // Sort by creation date descending
+    .limit(6); // Get only 6 latest products
 };
 
 const updateProductDB = async (id: string, payload: Partial<TProduct>) => {
@@ -98,6 +107,7 @@ export const ProductServices = {
   createProductIntoDB,
   getAllProductsDB,
   getSingleProductDB,
+  getCategoriesFromDB,
   getFeaturedProductsDB,
   updateProductDB,
   deleteProductDB,

@@ -16,7 +16,7 @@ router.post(
   validateRequest(createProductValidationSchema),
   ProductController.createProduct,
 );
-
+router.get('/categories', ProductController.getCategories);
 router.get('/featured', ProductController.getFeaturedProducts);
 router.get('/:id', ProductController.getSingleProduct);
 

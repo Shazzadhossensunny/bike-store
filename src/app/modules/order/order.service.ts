@@ -176,6 +176,26 @@ const getAllOrdersDB = async (
   };
 };
 
+const getMyOrdersDB = async (userId: string) => {
+  // Validate userId
+  if (!userId) {
+    throw new AppError(StatusCodes.BAD_REQUEST, 'User ID is required');
+  }
+
+  // Find all orders for this specific user
+  const result = await Order.find({ user: userId })
+    .populate('user', 'name email')
+    .populate('products.productId', 'name brand price')
+    .sort({ createdAt: -1 });
+
+  return {
+    result,
+    meta: {
+      count: result.length,
+    },
+  };
+};
+
 const getSingleOrderDB = async (
   orderId: string,
   userId: string,
@@ -275,4 +295,5 @@ export const OrderService = {
   getSingleOrderDB,
   updateOrderStatusDB,
   deleteOrderDB,
+  getMyOrdersDB,
 };

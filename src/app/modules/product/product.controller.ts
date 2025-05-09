@@ -38,6 +38,16 @@ const getSingleProduct = catchAsync(async (req, res) => {
     data: result,
   });
 });
+//get category products
+const getCategories = catchAsync(async (req, res) => {
+  const result = await ProductServices.getCategoriesFromDB();
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Categories retrieved successfully',
+    data: result,
+  });
+});
 
 //get featured products
 const getFeaturedProducts = catchAsync(async (req, res) => {
@@ -76,6 +86,7 @@ export const ProductController = {
   createProduct,
   getAllProducts,
   getSingleProduct,
+  getCategories,
   getFeaturedProducts,
   updateSingleProduct,
   deleteProduct,

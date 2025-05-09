@@ -33,6 +33,13 @@ class QueryBuilder<T> {
 
     excludeFields.forEach((el) => delete queryObj[el]);
 
+    // Add category filtering
+    if (queryObj.category) {
+      queryObj.category = {
+        $regex: new RegExp(queryObj.category as string, 'i'),
+      };
+    }
+
     // Handle price range filtering
     if (queryObj.minPrice || queryObj.maxPrice) {
       const priceFilter: Record<string, unknown> = {};

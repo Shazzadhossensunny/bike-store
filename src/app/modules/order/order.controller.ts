@@ -45,6 +45,18 @@ const getAllOrders = catchAsync(async (req, res) => {
   });
 });
 
+const getMyOrders = catchAsync(async (req, res) => {
+  // Use the user ID from the authenticated user
+  const result = await OrderService.getMyOrdersDB(req.user?.id);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Your orders retrieved successfully',
+    data: result.result,
+  });
+});
+
 const getSingleOrder = catchAsync(async (req, res) => {
   const result = await OrderService.getSingleOrderDB(
     req.params.id,
@@ -96,4 +108,5 @@ export const OrderController = {
   getSingleOrder,
   updateOrderStatus,
   deleteOrder,
+  getMyOrders,
 };
