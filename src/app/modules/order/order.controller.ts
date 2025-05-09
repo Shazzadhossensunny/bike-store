@@ -3,6 +3,7 @@ import { OrderService } from './order.service';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { StatusCodes } from 'http-status-codes';
+import mongoose from 'mongoose';
 
 const createOrder = catchAsync(async (req, res) => {
   const result = await OrderService.createOrderIntoDB(req.user?.id, req.body);
@@ -44,19 +45,38 @@ const getAllOrders = catchAsync(async (req, res) => {
     data: result.result,
   });
 });
+// const getMyOrders = catchAsync(async (req, res) => {
+//   // Get user ID from verified auth middleware
+//   const userId = req.user?.userId;
 
-const getMyOrders = catchAsync(async (req, res) => {
-  // Use the user ID from the authenticated user
-  const result = await OrderService.getMyOrdersDB(req.user?.id);
+//   if (!userId) {
+//     return sendResponse(res, {
+//       statusCode: StatusCodes.UNAUTHORIZED,
+//       success: false,
+//       message: 'Authentication required to view orders',
+//       data: null,
+//     });
+//   }
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'Your orders retrieved successfully',
-    data: result.result,
-  });
-});
+//   // Make sure userId is a valid ObjectId before passing to service
+//   if (!mongoose.Types.ObjectId.isValid(userId)) {
+//     return sendResponse(res, {
+//       statusCode: StatusCodes.BAD_REQUEST,
+//       success: false,
+//       message: 'Invalid user ID format',
+//       data: null,
+//     });
+//   }
 
+//   const result = await OrderService.getMyOrdersDB(userId);
+
+//   sendResponse(res, {
+//     statusCode: StatusCodes.OK,
+//     success: true,
+//     message: 'Orders retrieved successfully',
+//     data: result.data,
+//   });
+// });
 const getSingleOrder = catchAsync(async (req, res) => {
   const result = await OrderService.getSingleOrderDB(
     req.params.id,
@@ -108,5 +128,5 @@ export const OrderController = {
   getSingleOrder,
   updateOrderStatus,
   deleteOrder,
-  getMyOrders,
+  // getMyOrders,
 };

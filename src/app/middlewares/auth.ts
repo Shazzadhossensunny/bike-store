@@ -31,6 +31,7 @@ const auth = (...requiredRoles: TUserRole[]) => {
     } catch (err) {
       throw new AppError(StatusCodes.UNAUTHORIZED, 'Unauthorized');
     }
+
     const { role, email, iat, id } = decoded;
 
     // checking if the user is exist

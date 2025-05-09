@@ -176,26 +176,36 @@ const getAllOrdersDB = async (
   };
 };
 
-const getMyOrdersDB = async (userId: string) => {
-  // Validate userId
-  if (!userId) {
-    throw new AppError(StatusCodes.BAD_REQUEST, 'User ID is required');
-  }
+// const getMyOrdersDB = async (userId: string) => {
+//   // Validate input format
+//   if (!mongoose.Types.ObjectId.isValid(userId)) {
+//     throw new AppError(StatusCodes.BAD_REQUEST, 'Invalid user ID format');
+//   }
 
-  // Find all orders for this specific user
-  const result = await Order.find({ user: userId })
-    .populate('user', 'name email')
-    .populate('products.productId', 'name brand price')
-    .sort({ createdAt: -1 });
+//   try {
+//     const result = await Order.find({
+//       user: new mongoose.Types.ObjectId(userId),
+//     })
+//       .populate('user', 'name email')
+//       .populate('products.productId', 'name brand price')
+//       .sort({ createdAt: -1 })
+//       .lean(); // Better performance with lean()
 
-  return {
-    result,
-    meta: {
-      count: result.length,
-    },
-  };
-};
-
+//     return {
+//       data: result,
+//       meta: {
+//         count: result.length,
+//         user: userId,
+//       },
+//     };
+//   } catch (error) {
+//     console.error('Order query error:', error);
+//     throw new AppError(
+//       StatusCodes.INTERNAL_SERVER_ERROR,
+//       'Failed to retrieve orders. Please try again later.',
+//     );
+//   }
+// };
 const getSingleOrderDB = async (
   orderId: string,
   userId: string,
@@ -295,5 +305,5 @@ export const OrderService = {
   getSingleOrderDB,
   updateOrderStatusDB,
   deleteOrderDB,
-  getMyOrdersDB,
+  // getMyOrdersDB,
 };
